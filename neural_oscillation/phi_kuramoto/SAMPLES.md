@@ -3,14 +3,14 @@
 ## Фи-нейрон
 $$
 \begin{equation}
-      \dot \varphi_i = \gamma_i - f_i(\phi_i) + \sum_{j=1}^{N} d_{i,j}\cdot \sin(\phi_j - \phi_i), \;  
+      \dot \varphi_i = \gamma_i - f_i(\phi_i) + \sum_{j=1}^{N-1} d_{i,j}\cdot \sin(\phi_j - \phi_i), \;  
       i = \overline{1,N}
 \end{equation}   
 $$
 
 где 
 $\varphi_{i}$ -  фаза i-го элемента  
-$f_{i}(\phi_i) = \sin{\left(\frac{\varphi_{i}}{n}\right)}$  
+$f_{i}(\varphi_i) = \sin{\left(\frac{\varphi_{i}}{n}\right)}$  
 $n$ - параметр, отвечающий за периодичность  
 $\gamma_{i}$ - частотная расстойка i-го элемента  
 $d_{i,j}$ - параметр связи, описывающий взаимодействие между двумя элементами $(i, j)$  
@@ -24,14 +24,14 @@ $d_{i,j}$ - параметр связи, описывающий взаимоде
 ## Модифицированный фи-нейрон с смещением 
 $$
 \begin{equation}
-      \dot \varphi_i = \gamma_i - f_i(\phi_i) + \sum_{j=1}^{N} d_{i,j}\cdot \sin(\phi_j - \phi_i - \alpha), \;  
+      \dot \varphi_i = \gamma_i - f_i(\phi_i) + \sum_{j=1}^{N-1} d_{i,j}\cdot \sin(\phi_j - \phi_i - \alpha), \;  
       i = \overline{1,N}
 \end{equation}   
 $$
 
 где 
 $\varphi_{i}$ -  фаза i-го элемента  
-$f_{i}(\phi_i) = \sin{\left(\frac{\varphi_{i}}{n}\right)}$  
+$f_{i}(\varphi_i) = \sin{\left(\frac{\varphi_{i}}{n}\right)}$  
 $n$ - параметр, отвечающий за периодичность  
 $\gamma_{i}$ - частотная расстойка i-го элемента  
 $d_{i,j}$ - параметр связи, описывающий взаимодействие между двумя элементами $(i, j)$  
