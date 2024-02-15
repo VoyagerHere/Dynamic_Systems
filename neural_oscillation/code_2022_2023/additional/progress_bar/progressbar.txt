@@ -1,0 +1,21 @@
+https://www.mathworks.com/matlabcentral/fileexchange/6922-progressbar
+
+This implementation of progressbar is intended to be extremely simple to use while providing a high quality user experience.
+
+Features:
+- Can add progressbar to existing m-files with a single line of code.
+- Supports multiple bars in one figure to show progress of nested loops.
+- Optional labels on bars.
+- Figure closes automatically when task is complete.
+- Only one figure can exist so old figures don't clutter the desktop.
+- Remaining time estimate is accurate even if the figure gets closed.
+- Minimal execution time. Won't slow down code.
+- Randomized color. When a programmer gets bored...
+
+Demo:
+n = 1000;
+progressbar % Create figure and set starting time
+for i = 1:n
+pause(0.01) % Do something important
+progressbar(i/n) % Update figure
+end
