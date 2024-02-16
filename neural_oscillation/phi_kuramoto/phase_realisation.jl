@@ -35,7 +35,7 @@ tspan = (0, 1000.0)
 y0 = zeros(num)
 g = [g_init + delta * i for i in  0:(num -  1)];
 
-prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, dim_size))
+prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
 sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
 
 y0 = sol[end]
@@ -45,7 +45,10 @@ sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
 
 T = sol.t
 Y = [mod.(y, 2 * pi) for y in sol.u]
-
+Y = sol.u;
+YY = reduce(vcat,transpose.(Y))
+YY[:,1]
+findall(x -> x < 0, YY[:,1])
 plot()
 
 for i in 1:num
@@ -55,6 +58,6 @@ for i in 1:num
 end
 
 
-# ylims!(0,  2*pi)
+ylims!(0,  2*pi)
 xlabel!(L"t")
 ylabel!(L"\varphi")
