@@ -24,6 +24,26 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
+
+
+function DELETE_TRANSIENT(Y, tol=0.002)
+  len = length(Y);
+  i = 10;
+  while i < len
+      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      
+
+      if ((rel_change_1 < tol) && (rel_change_2 < tol))
+          return i
+      end
+      i += 10;
+  end
+  
+  return 1
+end
+
+
 # in 5,5 is process
 n = [5, 5];
 d = [0.01]
@@ -31,16 +51,32 @@ delta = 0.01;
 num = length(n);
 g_init = 1.01;
 alpha = pi/8;
-tspan = (1000, 4000)
+tspan = (100, 600)
 
-y0 = zeros(num)
+y0 = [0, 0]
+
+
+
 g = [g_init + delta * i for i in  0:(num -  1)];
 g = [1.01, 1.02]
 prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
 sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
 
 T = sol.t
-# Y = [mod.(y, 2 * pi) for y in sol.u]
+Y = sol.u;
+
+index = DELETE_TRANSIENT(Y)
+start = T[index];
+y0 = [start, start]
+
+prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
+sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+Y = copy(sol.u);
+T = copy(sol.t)
+
+Y = [mod.(y, 2 * pi) for y in Y]
+
+
 n1 = n[1]; g1 = g[1];
 plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$g1")
 for i in 2:num
@@ -49,6 +85,7 @@ for i in 2:num
   plot!(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
 end
 
-ylims!(0,  2*pi)
+# ylims!(0,  2*pi)
 xlabel!(L"t")
 ylabel!(L"\varphi")
+

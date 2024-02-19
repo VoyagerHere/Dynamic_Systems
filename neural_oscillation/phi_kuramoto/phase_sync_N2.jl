@@ -6,9 +6,9 @@
 
 # TODO:
 # ADD delete unstable - done
-# TRY delete unstable new algorithm
+# TRY delete unstable new algorithm - done (from phase realisation)
 # ADD version for CUDA
-# ADAPTIVE GRID
+# ADAPTIVE GRID - done
 
 
 
