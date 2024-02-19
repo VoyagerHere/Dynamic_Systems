@@ -1,13 +1,18 @@
+##########################################################
+## Parameter-Parallelism with GPU Ensemble Methods 
+## https://docs.sciml.ai/DiffEqGPU/stable/getting_started/
+## https://docs.sciml.ai/DiffEqGPU/stable/tutorials/gpu_ensemble_basic/#lorenz
+###########################################################
+
+
 # TODO:
 # ADD delete unstable - done
 # TRY delete unstable new algorithm - done (from phase realisation)
+# ADD version for CUDA
 # ADAPTIVE GRID - done
-# ADD Parallelism for 
-#   CUDA
-#   Threads
 
 
-
+using DiffEqGPU, OrdinaryDiffEq, StaticArrays, CUDA
 using DifferentialEquations
 using Plots
 using LaTeXStrings
@@ -50,6 +55,7 @@ D_NUM = length(D_LIST)
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
 SYNC = [zeros(NUM) for _ in 1:(D_NUM*G_NUM)]
 
+
 const ALPHA_TEXT = L"π/8"
 const ALPHA = pi /  8
 
@@ -69,25 +75,35 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
+    param_num = 5
+    PARAM_GRID = zeros(zeros(param_num) for _ in 1:(D_NUM*G_NUM))
     G1 = GStart;
+    
+    # Fill param grid to send it on GPU
+    
     for k in eachindex(G_LIST)
       G2 = G_LIST[k];
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       for m in eachindex(D_LIST)
         d = D_LIST[m]
-        
-        tspan = (a, b)
-        
-        p = (d, ALPHA, [G1, G2], PAR_N, NUM);
-        y0 = [0; 0]
+        PARAM_GRID[m + (k-1)*D_NUM] = [d, ALPHA, [G1, G2], PAR_N, NUM];
+      end
+    end
 
-        prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
-        Y = sol.u;
-        T = sol.t;
+    y0 = @SVector[0; 0]
+    tspan = (a, b)
+    p = @SVector[d, ALPHA, [G1, G2], PAR_N, NUM];
+    prob = ODEProblem(eqn!, y0, tspan, p)
+    prob_func = (prob, i, repeat) -> remake(prob, p = (@SVector PARAM_GRID[i]))
+    monteprob = EnsembleProblem(prob, prob_func = prob_func, safetycopy = false)
+    sol = solve(monteprob, GPUTsit5(), EnsembleGPUKernel(CUDA.CUDABackend()),
+    trajectories = D_NUM*G_NUM,
+    saveat = 1.0f0)
 
+    for k in eachindex(G_LIST)
+      for m in eachindex(D_LIST)
+        Y = sol.u[m + (k-1)*D_NUM];
+        T = sol.t[m + (k-1)*D_NUM];
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
-
         sync = [0, 0]
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
@@ -97,8 +113,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         # NUM_OF_COMPUTE_RES
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
-    end
-      println("Iteration $k of $num_of_iterations")
+      end
     end
 end
 
@@ -139,16 +154,16 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   return (DIFF_SP, DIFF_BS, ratio, err)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset)
-  global b;
-  if (reset == true)
-    b = init_b;
-  else   
-    if (num_of_bursts < ADAPTIVE_SET_ERROR)
-      b += b_step;
-    end
-  end
-end
+# function ADAPTIVE_GRID(num_of_bursts, reset)
+#   global b;
+#   if (reset == true)
+#     b = init_b;
+#   else   
+#     if (num_of_bursts < ADAPTIVE_SET_ERROR)
+#       b += b_step;
+#     end
+#   end
+# end
 
 
 function handle_errors(err1::Bool, err2::Bool)
