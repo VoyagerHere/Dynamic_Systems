@@ -4,6 +4,14 @@
 # using Pkg
 # Pkg.activate(pathtorepo * "dynamical-systems\\env\\integrate\\")
 
+# TODO:
+# ADD delete unstable - done
+# TRY delete unstable new algorithm
+# ADD version for CUDA
+# ADAPTIVE GRID
+
+
+
 using DifferentialEquations
 using Plots
 using LaTeXStrings
@@ -13,9 +21,20 @@ using Statistics
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const DEBUG_PRINT = true
-const DRAW_PHASE_REALISATION = true;
+const k_ENABLE_ADAPTIVE_GRID = true;
+const k_DEBUG_PRINT = true
+const k_DRAW_PHASE_REALISATION = false;
 const DATA_TAKE_ERROR = 0.05;
+
+global a = 1000;
+global b = 2000;
+
+# For ADAPTIVE_GRID
+const init_b = 2000;
+const b_step = 1000;
+const ADAPTIVE_SET_ERROR = 10;
+
+const SPIKE_ERROR =  10
 
 
 N1 = 1
@@ -29,8 +48,7 @@ const G_NUM = 500
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA_MAX_VAL =  0.025
-const SPIKE_ERROR =  10
-G_LIST = range(GStart + DELTA_MAX_VAL, stop=GStart + DELTA_MAX_VAL, length=G_NUM)
+G_LIST = range(GStart, stop=GStart + DELTA_MAX_VAL, length=G_NUM)
 D_LIST = 0:D_ACCURACY:D_MAX
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:length(D_LIST* G_NUM)]
 SYNC = [zeros(NUM) for _ in 1:length(D_LIST* G_NUM)]
@@ -58,14 +76,13 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
-    global G1 = GStart;
+    G1 = GStart;
     for k in eachindex(G_LIST)
-      global G2 = G_LIST[k];
+      G2 = G_LIST[k];
+      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       for m in eachindex(D_LIST)
-        global d = D_LIST[m]
+        d = D_LIST[m]
         
-        a = 1000
-        b = 2000
         tspan = (a, b)
         
         p = (d, ALPHA, [G1, G2], PAR_N, NUM);
@@ -73,11 +90,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
-        global Y = sol.u;
-        global T = sol.t;
-
-
-        # DRAW_PHASE_REALISATION && DRAW(T,Y,[G1, G2], d, PAR_N);
+        Y = sol.u;
+        T = sol.t;
 
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
 
@@ -91,18 +105,26 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DATA[m] = [d, ratio, delta]
         SYNC[m] = sync;
     end
-      DEBUG_PRINT && println("Iteration $k of $num_of_iterations")
+      println("Iteration $k of $num_of_iterations")
     end
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
-  global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+
+  unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
+  unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
+
+  SPIKES1 = SPIKES1[unstbl_1:end];
+  SPIKES2 = SPIKES2[unstbl_2:end];
+
+  k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
+  k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
+
   err = handle_errors(Bool(err1), Bool(err2));
-  display(err)
   if err != 0
-      display("dead")
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -err
@@ -113,16 +135,28 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   # A1 = A1[UNSTBL1:end]
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
+
+  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
+
+  
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
-  display(length(SPIKES1))
-  display(length(SPIKES2))
-  display(length(BURSTS1))
-  display(length(BURSTS2))
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
   return (DIFF_SP, DIFF_BS, ratio, err)
 end
+
+function ADAPTIVE_GRID(num_of_bursts, reset)
+  global b;
+  if (reset == true)
+    b = init_b;
+  else   
+    if (num_of_bursts < ADAPTIVE_SET_ERROR)
+      b += b_step;
+    end
+  end
+end
+
 
 function handle_errors(err1::Bool, err2::Bool)
   if err1 && err2
@@ -156,6 +190,26 @@ function FIND_BURST(SPIKES, n)
   return B
 end
 
+function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
+  UNSTBL = 1
+  if err > 0
+      return UNSTBL
+  end
+  B = zeros(Int64, div(length(SPIKES), n))
+  for m in n:n:length(SPIKES)
+    B[div(m, n)] = SPIKES[m]
+  end
+  if length(B) < unstable_err + 2
+      return UNSTBL
+  end
+  element = B[unstable_err]
+  global UNSTBL = findall(SPIKES .== element)
+  if isempty(UNSTBL)
+      UNSTBL = 1
+  end
+  return UNSTBL[1]
+end
+
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
     while i < length(POINTS)
@@ -185,21 +239,19 @@ function FIND_DIFF(A1, A2, T)
     end
 
     for el in A2
-      display(el)
         _, index = findmax(A1[A1 .<= el])
         if !isempty(index)
             push!(NEAR, A1[index])
         end
     end
-    A1 = T[A1];
+    A2 = T[A2];
     NEAR = T[NEAR];
 
     len = length(NEAR)
-    display(len)
     DIFF = zeros(len)
 
-    A1 = A1[end - len + 1:end]
-    DIFF = A1 .- NEAR
+    # A2 = A2[end - len + 1:end]
+    DIFF = A2 .- NEAR
     return DIFF
 end
 
@@ -227,27 +279,6 @@ function DETECT_DEATH(errors)
     end
     return err
 end
-
-# function DELETE_UNSTBL(A, err, n, ind, error)
-#     UNSTBL = 1
-#     if error == 0 || err > 0
-#         return UNSTBL
-#     end
-#     num = n[ind]
-#     B = zeros(div(length(A), num))
-#     for m in 1:num:length(A)
-#         B[ceil(m / num)] = A[m]
-#     end
-#     if length(B) < error + 2
-#         return UNSTBL
-#     end
-#     unstbl_el = B[error]
-#     UNSTBL = findall(A .== unstbl_el)
-#     if isnan(UNSTBL)
-#         UNSTBL = 1
-#     end
-#     return UNSTBL
-# end
 
 function DRAW(T, Y, G, D, PAR_N)
     Y = [mod.(y, 2 * pi) for y in Y]

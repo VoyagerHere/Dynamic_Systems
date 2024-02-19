@@ -24,46 +24,31 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-n = [1, 1];
-d = [0]
+# in 5,5 is process
+n = [5, 5];
+d = [0.01]
 delta = 0.01;
 num = length(n);
 g_init = 1.01;
-alpha = 0.0
-tspan = (0, 200.0)
+alpha = pi/8;
+tspan = (1000, 4000)
 
 y0 = zeros(num)
 g = [g_init + delta * i for i in  0:(num -  1)];
+g = [1.01, 1.02]
 prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
 sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
 
-# y0 = sol[0,0]
-
-# prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
-# sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
-
 T = sol.t
-Y = [mod.(y, 2 * pi) for y in sol.u]
-plot(T, getindex.(Y, 1), label=L"n_1 = 1, \gamma_{1}=1.01")
-
-plot();
-for i in 1:num
-  g_cur = g[i]
-  n_cur = n[i]
-  plot(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
+# Y = [mod.(y, 2 * pi) for y in sol.u]
+n1 = n[1]; g1 = g[1];
+plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$g1")
+for i in 2:num
+  n_cur = n[i];
+  g_cur = g[i];
+  plot!(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
 end
-
 
 ylims!(0,  2*pi)
 xlabel!(L"t")
 ylabel!(L"\varphi")
-
-
-  Y = reduce(vcat,transpose.(Y))
-  DATA_TAKE_ERROR = 0.05;
-  SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y[:,1])
-  display(SPIKES)
-
-
-    display(length(SPIKES))
-    display(SPIKES)
