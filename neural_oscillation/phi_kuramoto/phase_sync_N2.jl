@@ -1,8 +1,8 @@
 
-username = "s20380447"
-pathtorepo = "C:\\Users\\" *username *  "\\Desktop\\" * "\\work\\repo"
-using Pkg
-Pkg.activate(pathtorepo * "dynamical-systems\\env\\integrate\\")
+# username = "s20380447"
+# pathtorepo = "C:\\Users\\" *username *  "\\Desktop\\" * "\\work\\repo"
+# using Pkg
+# Pkg.activate(pathtorepo * "dynamical-systems\\env\\integrate\\")
 
 using DifferentialEquations
 using Plots
@@ -14,17 +14,15 @@ Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
 const DEBUG_PRINT = true
-const DRAW_PHASE_REALISATION = false;
+const DRAW_PHASE_REALISATION = true;
 const DATA_TAKE_ERROR = 0.05;
 
 
-
-
-N1 = 2
-N2 = 2
+N1 = 1
+N2 = 1
 const NUM = 2;
 const NUM_OF_COMPUTE_RES = 3;
-PAR_N = [N1, N2];
+global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
 const G_NUM = 500
@@ -32,13 +30,15 @@ const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA_MAX_VAL =  0.025
 const SPIKE_ERROR =  10
-G_LIST = range(GStart, stop=GStart + DELTA_MAX_VAL, length=G_NUM)
+G_LIST = range(GStart + DELTA_MAX_VAL, stop=GStart + DELTA_MAX_VAL, length=G_NUM)
 D_LIST = 0:D_ACCURACY:D_MAX
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:length(D_LIST* G_NUM)]
 SYNC = [zeros(NUM) for _ in 1:length(D_LIST* G_NUM)]
 
 const ALPHA_TEXT = L"π/8"
 const ALPHA = pi /  8
+
+
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -58,29 +58,26 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
-    G1 = GStart;
+    global G1 = GStart;
     for k in eachindex(G_LIST)
-      G2 = G_LIST[k];
+      global G2 = G_LIST[k];
       for m in eachindex(D_LIST)
-        d = D_LIST[m]
+        global d = D_LIST[m]
         
         a = 1000
-        b = 5000
+        b = 2000
         tspan = (a, b)
         
         p = (d, ALPHA, [G1, G2], PAR_N, NUM);
         y0 = [0; 0]
-        prob = ODEProblem(eqn!, y0, (0, 300), p)
-        sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
 
-        y0 = sol[end];
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
-        Y = sol.u;
-        T = sol.t;
+        global Y = sol.u;
+        global T = sol.t;
 
 
-        DRAW_PHASE_REALISATION && DRAW(T,Y,[G1, G2], d, PAR_N);
+        # DRAW_PHASE_REALISATION && DRAW(T,Y,[G1, G2], d, PAR_N);
 
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
 
@@ -94,16 +91,18 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DATA[m] = [d, ratio, delta]
         SYNC[m] = sync;
     end
-      DEBUG_PRINT && println("Iteration $index of $num_of_iterations")
+      DEBUG_PRINT && println("Iteration $k of $num_of_iterations")
     end
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
-  SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
   err = handle_errors(Bool(err1), Bool(err2));
-  if err > 0
+  display(err)
+  if err != 0
+      display("dead")
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -err
@@ -115,8 +114,13 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
-  DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
+  display(length(SPIKES1))
+  display(length(SPIKES2))
+  display(length(BURSTS1))
+  display(length(BURSTS2))
+
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
+  DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
   return (DIFF_SP, DIFF_BS, ratio, err)
 end
 
@@ -133,63 +137,69 @@ function handle_errors(err1::Bool, err2::Bool)
 end
 
 function FIND_SPIKES(Y, n)
-  tilda = TLD(n)
   Y = Y .% 2*pi;
-  SPIKES = findall(x -> (x - tilda) < DATA_TAKE_ERROR, Y )
-  SPIKES = FIND_NEAR_POINTS(SPIKES)
-  if isempty(findall(x -> (x - 2*pi) < DATA_TAKE_ERROR, Y))
-    err = 1
-  elseif isempty(findall(x -> (x - 2*pi) < DATA_TAKE_ERROR, Y))
-    err = 2
+  SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
+  FIND_NEAR_POINTS(SPIKES)
+  if (length(SPIKES)/n < 3)
+    err = 1;
   else
     err = 0;
   end
-
   return (SPIKES, err)
 end
 
-function FIND_NEAR_POINTS(POINTS)
-  tolerance = 2
-  diffs = diff(POINTS)
-  indices_to_remove = findall(x -> x < tolerance, diffs)
-  deleteat!(POINTS, indices_to_remove)
-  return POINTS
-end
-
 function FIND_BURST(SPIKES, n)
-    B = zeros(Int64, div(length(SPIKES), n))
-    for m in n:n:length(SPIKES)
-        B[div(m, n)] = SPIKES[m]
-    end
-    return B
+  B = zeros(Int64, div(length(SPIKES), n))
+  for m in n:n:length(SPIKES)
+      B[div(m, n)] = SPIKES[m]
+  end
+  return B
 end
 
-function FIND_RATIO(A, B)::Int64
+function FIND_NEAR_POINTS(POINTS)
+  i = 1;
+    while i < length(POINTS)
+        if POINTS[i+1] - POINTS[i] ==  1
+            deleteat!(POINTS, i)
+        else
+            i +=  1
+        end
+    end
+end
+
+function FIND_RATIO(A, B)
     ratio = zeros(length(A) - 2)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
-    return round(Int64, mean(ratio))
+    return mean(ratio)
 end
 
 # Find near spike by left for spike from A1
 # and compute diff as difference between them
-function FIND_DIFF(Arr1, Arr2, T)
+# A2 have bigger gamma value
+function FIND_DIFF(A1, A2, T)
     NEAR = []
-    for i in eachindex(Arr1)
-        _, index = findmax(Arr2[Arr2 .<= Arr1[i]])
+    if (minimum.(A1) > minimum.(A2)) 
+      A1, A2 = A2, A1
+    end
+
+    for el in A2
+      display(el)
+        _, index = findmax(A1[A1 .<= el])
         if !isempty(index)
-            push!(NEAR, Arr2[index])
+            push!(NEAR, A1[index])
         end
     end
-    Arr1 = T[Arr1];
+    A1 = T[A1];
     NEAR = T[NEAR];
 
     len = length(NEAR)
+    display(len)
     DIFF = zeros(len)
 
-    Arr1 = Arr1[end - len + 1:end]
-    DIFF = Arr1 .- NEAR
+    A1 = A1[end - len + 1:end]
+    DIFF = A1 .- NEAR
     return DIFF
 end
 
@@ -240,12 +250,11 @@ end
 # end
 
 function DRAW(T, Y, G, D, PAR_N)
-    Y = [mod.(y, 2 * pi) for y in sol.u]
-    plot()
-    for i in 1:eachindex(PAR_N)
+    Y = [mod.(y, 2 * pi) for y in Y]
+    for i in eachindex(PAR_N)
       n_cur = PAR_N[i];
       g_cur = G[i];
-      plot!(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
+      plot(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
     end
     title!(L"%$D")
     ylims!(0,  2*pi)
@@ -254,15 +263,10 @@ function DRAW(T, Y, G, D, PAR_N)
 end
 
 
-function TLD(n)
-  tilda = n * pi / 2 - floor(n / 4) * 2 * pi;
-  if abs(tilda - pi / 2) < 0.02
-      tilda = 3 * pi / 2;
-  else
-      tilda = abs(tilda - pi);
-  end
-end
+
 
 DATA = PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
-save_object("DATA.jld", DATA)
-save_object("SYNC.jld", SYNC)
+
+
+# save_object("DATA.jld", DATA)
+# save_object("SYNC.jld", SYNC)
