@@ -19,6 +19,7 @@ const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = true
 const k_DRAW_PHASE_REALISATION = false;
 const DATA_TAKE_ERROR = 0.05;
+const k_IS_SAVE_DATA = true;
 
 global a = 1000;
 global b = 2000;
@@ -271,7 +272,11 @@ function DRAW(T, Y, G, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-DATA = PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
-# save_object("DATA.jld", DATA)
-# save_object("SYNC.jld", SYNC)
+if k_IS_SAVE_DATA 
+  using Dates
+  time = Dates.format(now(),"yyyymmdd_HHMM");
+  filename ="$time.jld2"
+  @save filename DATA SYNC
+end
