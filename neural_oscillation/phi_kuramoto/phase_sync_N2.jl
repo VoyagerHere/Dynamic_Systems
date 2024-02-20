@@ -3,10 +3,8 @@
 # TRY delete unstable new algorithm - done (from phase realisation)
 # ADAPTIVE GRID - done
 # ADD Parallelism for 
-#   CUDA
-#   Threads
-
-
+#   CUDA - to do
+#   Threads - to do
 
 using DifferentialEquations
 using Plots
