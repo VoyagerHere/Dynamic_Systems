@@ -15,11 +15,15 @@ using Statistics
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
-const k_DEBUG_PRINT = true
+const k_ENABLE_ADAPTIVE_GRID = false;
+const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
+const k_IS_SAVE_DATA = false;
+const k_DELETE_TRANSIENT = false; 
+const k_DELETE_UNSTABLE = false;
+
 const DATA_TAKE_ERROR = 0.05;
-const k_IS_SAVE_DATA = true;
+
 
 global a = 1000;
 global b = 2000;
@@ -35,24 +39,23 @@ const SPIKE_ERROR =  10
 N1 = 1
 N2 = 1
 const NUM = 2;
-const NUM_OF_COMPUTE_RES = 3;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
 const G_NUM = 500
 const SYNC_ERROR =  0.05
 const GStart =  1.01
-const DELTA_MAX_VAL =  0.025
-G_LIST = range(GStart, stop=GStart + DELTA_MAX_VAL, length=G_NUM)
+const DELTA =  0.025
+G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
+
+const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
-SYNC = [zeros(NUM) for _ in 1:(D_NUM*G_NUM)]
+SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
 const ALPHA_TEXT = L"π/8"
 const ALPHA = pi /  8
-
-
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -85,6 +88,17 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         Y = sol.u;
         T = sol.t;
 
+        if (k_DELETE_TRANSIENT)
+          index = DELETE_TRANSIENT(Y)
+          start = T[index];
+          y0 = [start, start]
+
+          prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
+          sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+          Y = sol.u;
+          T = sol.t;
+        end 
+
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
 
         sync = [0, 0]
@@ -106,11 +120,13 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
-  unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
-  unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
+  if (k_DELETE_UNSTABLE)
+    unstbl_1 = DELETE_UNSTBL(BURSTS1, err1, PAR_N[1], error)
+    unstbl_2 = DELETE_UNSTBL(BURSTS2, err2, PAR_N[2], error)
 
-  SPIKES1 = SPIKES1[unstbl_1:end];
-  SPIKES2 = SPIKES2[unstbl_2:end];
+    SPIKES1 = SPIKES1[unstbl_1:end];
+    SPIKES2 = SPIKES2[unstbl_2:end];
+  end
 
   k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
   k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
@@ -123,13 +139,10 @@ function SYNC_PAIR(T, Y, PAR_N, error)
       return (DIFF_SP, DIFF_BS, ratio, err)
   end
 
-  # UNSTBL1 = DELETE_UNSTBL(A1, err1, n, 1, error)
-  # A1 = A1[UNSTBL1:end]
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
-  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
+  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
-
   
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
@@ -148,7 +161,6 @@ function ADAPTIVE_GRID(num_of_bursts, reset)
     end
   end
 end
-
 
 function handle_errors(err1::Bool, err2::Bool)
   if err1 && err2
@@ -200,6 +212,20 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
       UNSTBL = 1
   end
   return UNSTBL[1]
+end
+
+function DELETE_TRANSIENT(Y, tol=0.002)
+  len = length(Y);
+  i = 10;
+  while i < len
+      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      if ((rel_change_1 < tol) && (rel_change_2 < tol))
+          return i
+      end
+      i += 10;
+  end
+  return 1
 end
 
 function FIND_NEAR_POINTS(POINTS)
