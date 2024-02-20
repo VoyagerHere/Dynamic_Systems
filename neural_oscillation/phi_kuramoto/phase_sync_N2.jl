@@ -68,7 +68,7 @@ end
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
-    for k in eachindex(G_LIST)
+    Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       for m in eachindex(D_LIST)
@@ -258,19 +258,6 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DETECT_DEATH(errors)
-    if errors[1] && errors[2]
-        err = 11
-    elseif errors[2]
-        err = 10
-    elseif errors[1]
-        err = 01
-    else
-        err = 0
-    end
-    return err
-end
-
 function DRAW(T, Y, G, D, PAR_N)
     Y = [mod.(y, 2 * pi) for y in Y]
     for i in eachindex(PAR_N)
@@ -284,11 +271,7 @@ function DRAW(T, Y, G, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-
-
-
 DATA = PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
-
 
 # save_object("DATA.jld", DATA)
 # save_object("SYNC.jld", SYNC)
