@@ -11,6 +11,8 @@ using Plots
 using LaTeXStrings
 using JLD
 using Statistics
+using Dates
+
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
@@ -301,7 +303,6 @@ end
 PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
-  using Dates
   time = Dates.format(now(),"yyyymmdd_HHMM");
   filename ="$time.jld2"
   @save filename DATA SYNC

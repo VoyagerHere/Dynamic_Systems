@@ -71,4 +71,3 @@ end
 # ylims!(0,  2*pi)
 xlabel!(L"t")
 ylabel!(L"\varphi")
-

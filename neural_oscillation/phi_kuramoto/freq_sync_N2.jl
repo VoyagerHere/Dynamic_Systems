@@ -3,6 +3,8 @@ using Plots
 using LaTeXStrings
 using JLD
 using Statistics
+using Dates
+
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
@@ -164,6 +166,7 @@ function DEL_MIDDLE_BURST_INTRVL(n, T)
   if (n > 1)
     T = sort!(T, alg=InsertionSort);
     T = T[2:end]
+  end
 end
 
 function handle_errors(err1::Bool, err2::Bool)
@@ -263,7 +266,6 @@ end
 FREQ_SYNC(DATA, G, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
-  using Dates
   time = Dates.format(now(),"yyyymmdd_HHMM");
   filename ="$time.jld2"
   @save filename DATA SYNC
