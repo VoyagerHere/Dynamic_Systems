@@ -1,11 +1,3 @@
-# TODO:
-# ADD delete unstable - done
-# TRY delete unstable new algorithm - done (from phase realisation)
-# ADAPTIVE GRID - done
-# ADD Parallelism for 
-#   CUDA - to do
-#   Threads - to do
-
 using DifferentialEquations
 using Plots
 using LaTeXStrings
@@ -86,7 +78,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
         Y = sol.u;
         T = sol.t;
 
@@ -95,8 +87,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           start = T[index];
           y0 = [start, start]
 
-          prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
-          sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+          prob = ODEProblem(eqn!, y0, tspan, p)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
           Y = sol.u;
           T = sol.t;
         end 
@@ -109,7 +101,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
         delta = G2 - G1
-        # NUM_OF_COMPUTE_RES
+        
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
     end
@@ -177,7 +169,7 @@ function handle_errors(err1::Bool, err2::Bool)
 end
 
 function FIND_SPIKES(Y, n)
-  Y = Y .% 2*pi;
+  Y = mod.(Y, 2*pi)
   SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
   FIND_NEAR_POINTS(SPIKES)
   if (length(SPIKES)/n < 3)
@@ -233,7 +225,7 @@ end
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
     while i < length(POINTS)
-        if POINTS[i+1] - POINTS[i] ==  1
+        if POINTS[i+1] - POINTS[i] == 1
             deleteat!(POINTS, i)
         else
             i +=  1
@@ -287,14 +279,13 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G, D, PAR_N)
+function DRAW(T, Y, G1, G2, D, PAR_N)
     Y = [mod.(y, 2 * pi) for y in Y]
-    for i in eachindex(PAR_N)
-      n_cur = PAR_N[i];
-      g_cur = G[i];
-      plot(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
-    end
-    title!(L"%$D")
+    n1 = PAR_N[1];
+    n2 = PAR_N[2];
+    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
+    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
+    title!(L"d = %$D")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")

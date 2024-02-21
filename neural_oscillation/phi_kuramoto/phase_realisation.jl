@@ -31,20 +31,20 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   return 1
 end
 
-n = [5, 5];
+n = [1, 1];
 d = [0.01]
 delta = 0.01;
 num = length(n);
 g_init = 1.01;
 alpha = pi/8;
-tspan = (100, 600)
+tspan = (1000, 1300)
 
 y0 = [0, 0]
 
 g = [g_init + delta * i for i in  0:(num -  1)];
 g = [1.01, 1.02]
 prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
-sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+sol = solve(prob, Vern8(), reltol=1e-12, abstol=1e-12)
 
 T = sol.t
 Y = sol.u;

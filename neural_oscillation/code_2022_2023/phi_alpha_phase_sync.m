@@ -1,20 +1,3 @@
-core = feature('numcores');
-pool = parpool('local',core);
-disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
-
-retries = 0;
-retry_limit = 3;
-while (pool.NumWorkers < core)
-    retries = retries + 1;
-    disp('Restarting parallel pool');
-    delete(pool);
-    pool = parpool('local',core);
-    disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
-    if(retries >= retry_limit)
-        break;
-    end
-end
-
 
 
 %  addpath('additional\progress_bar\')
@@ -91,7 +74,7 @@ end
 
 function DELTA_TABLE = d_iterate(g, dd, n, alpha, delta_phi_error, error)
     DELTA_TABLE = zeros(length(dd), 4);
-    parfor m = 1:length(dd)
+    for m = 1:length(dd)
         d = dd(m);
         y0 = [0; 0];
         a = 2000;
@@ -193,7 +176,7 @@ end
 
 function [A, err] = find_spikes(Y, n, ind)
     tilda = tld(n(ind));
-    error = 0.05;
+   error = 0.05;
     YY = mod(Y, 2 * pi);
     A = find(abs(YY(:, ind) - tilda) < error);
     A = Find_Near_Points(A);

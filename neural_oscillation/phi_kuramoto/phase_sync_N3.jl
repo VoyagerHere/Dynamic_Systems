@@ -97,7 +97,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           start = T[index];
           y0 = [start, start]
 
-          prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
+          prob = ODEProblem(eqn!, y0, tspan, p)
           sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
           Y = sol.u;
           T = sol.t;
