@@ -129,17 +129,22 @@ function SYNC_PAIR(T, Y, PAR_N, error)
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
 
-  Times_1 = FIND_TIMES(SPIKES1, T);
-  Times_2 = FIND_TIMES(SPIKES2, T);
+  global Times_1 = FIND_TIMES(SPIKES1, T);
+  global Times_2 = FIND_TIMES(SPIKES2, T);
 
-  global Times_1 = DEL_MIDDLE_BURST_INTRVL(PAR_N[1], T)
-  global Times_2 = DEL_MIDDLE_BURST_INTRVL(PAR_N[2], T)
+  DEL_MIDDLE_BURST_INTRVL(PAR_N[1], Times_1)
+  DEL_MIDDLE_BURST_INTRVL(PAR_N[2], Times_2)
 
-  ws_1 = 2*pi/mean.(Times_1);
-  ws_2 = 2*pi/mean.(Times_2);
+  avg(x) = (ones(length(x)) / length(x))'*x
+
+
+  ws_1 = 2*pi./avg(Times_1);
+  ws_2 = 2*pi./avg(Times_2);
 
   return (ws_1, ws_2, err)
 end
+
+avg(x) = (ones(length(x)) / length(x))'*x
 
 function FIND_SPIKES(Y, n)
   Y = mod.(Y, 2*pi)
