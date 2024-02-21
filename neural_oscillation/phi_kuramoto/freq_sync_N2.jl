@@ -9,10 +9,10 @@ using Dates
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
+const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 
@@ -20,18 +20,18 @@ const DATA_TAKE_ERROR = 0.05;
 
 
 global a = 1000;
-global b = 1300;
+global b = 2000;
 
 # For ADAPTIVE_GRID
 const init_b = 2000;
-const b_step = 1000;
+const b_step = 4000;
 const ADAPTIVE_SET_ERROR = 10;
 
 const SPIKE_ERROR =  10
 
 
-N1 = 1
-N2 = 1
+N1 = 2
+N2 = 2
 const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
@@ -109,8 +109,8 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(BURSTS1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(BURSTS2, err2, PAR_N[2], error)
+    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
+    unstbl_2 = DELETE_UNSTBL(SPIKES1, err2, PAR_N[2], error)
 
     SPIKES1 = SPIKES1[unstbl_1:end];
     SPIKES2 = SPIKES2[unstbl_2:end];
@@ -127,7 +127,7 @@ function SYNC_PAIR(T, Y, PAR_N, error)
       return (DIFF_SP, DIFF_BS, ratio, err)
   end
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
+  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(SPIKES1), length(SPIKES1)]), false))
 
   global Times_1 = FIND_TIMES(SPIKES1, T);
   global Times_2 = FIND_TIMES(SPIKES2, T);
@@ -274,5 +274,5 @@ FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
 if k_IS_SAVE_DATA 
   time = Dates.format(now(),"yyyymmdd_HHMM");
   filename ="$time.jld2"
-  @save filename DATA SYNC
+  @save filename DATA
 end
