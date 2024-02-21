@@ -1,25 +1,3 @@
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-%  Phase synchronization modes for phi-alpha system
-%  
-%  N = 2 - number of elements in system
-%  alpha - offset parameter of system
-%  d - sync parameter of system
-%
-%  If n = 1 then burst is equivalent to spike
-%
-%  System state code declaration:
-%       0** - error code  (death some of elements in system)
-%       1** - global sync state (no sync, burst or spike sync)
-%       2** - local sync state (between some of elements in system)
-% 
-%
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Add files
-%%%%%path('additional\progress_bar\')
-% addpath('additional\')
-
 core = feature('numcores');
 pool = parpool('local',core);
 disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
@@ -39,26 +17,30 @@ end
 
 
 
+%  addpath('additional\progress_bar\')
+% addpath('additional\')
+
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parametrs to set
-error = 10;
+error = 20;
 n1 = 2;
 n2 = 2;
 n = [n1; n2];
 g_num = 500;
 
 
-global alpha_text
-alpha_text = 'π/8';
-alpha_text_par = 'pi_8';
-alpha = pi / 8;
-d_max = 0.07;  d_accuracy = 0.0001;
+% global alpha_text
+% alpha_text = 'π/8';
+% alpha_text_par = 'pi_8';
+% alpha = pi / 8;
+% d_max = 0.07;  d_accuracy = 0.0001;
 
 
-% alpha_text = '2π/3';
-% alpha_text_par = '2pi_3';
-% alpha = 2*pi / 3;
-% d_max = 0.09;  d_accuracy = 0.00001;
+alpha_text = '2π/3';
+alpha_text_par = '2pi_3';
+alpha = 2*pi / 3;
+d_max = 0.09;  d_accuracy = 0.00001;
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -97,13 +79,12 @@ function GAMMA_TABLE = gamma_iterate(g1, n, g_list, ...
     delta_phi_error = 0.005;
     d_list = 0:d_accuracy:d_max;
     num_of_iterations = length(g_list);
-%    progressbar; % Set progress bar
     for k = 1:length(g_list)
         g2 = g_list(k);
         D_TABLE = d_iterate([g1; g2], d_list, n, ...
             alpha, delta_phi_error, error);
         GAMMA_TABLE(end + 1:end + size(D_TABLE, 1), 1:4) = D_TABLE;
-%       progressbar(k/num_of_iterations); % Update progress bar
+        disp(num_of_iterations);
     end
 
 end
@@ -114,7 +95,7 @@ function DELTA_TABLE = d_iterate(g, dd, n, alpha, delta_phi_error, error)
         d = dd(m);
         y0 = [0; 0];
         a = 2000;
-        b = 12000;
+        b = 6000;
         opts = odeset('RelTol',1e-13,'AbsTol',1e-14,'Refine',10);
         [T, Y] = ode45(@(t, y)eqn(g, n, t, y, d, alpha), [a, b], y0, opts);
 % draw(T, Y, g, d);
