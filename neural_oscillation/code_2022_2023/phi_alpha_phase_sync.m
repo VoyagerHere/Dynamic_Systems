@@ -17,8 +17,26 @@
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Add files
-addpath('additional\progress_bar\')
-addpath('additional\')
+%%%%%path('additional\progress_bar\')
+% addpath('additional\')
+
+core = feature('numcores');
+pool = parpool('local',core);
+disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
+
+retries = 0;
+retry_limit = 3;
+while (pool.NumWorkers < core)
+    retries = retries + 1;
+    disp('Restarting parallel pool');
+    delete(pool);
+    pool = parpool('local',core);
+    disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
+    if(retries >= retry_limit)
+        break;
+    end
+end
+
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -64,11 +82,10 @@ GAMMA_TABLE = gamma_iterate(g1, n, g_list, GAMMA_TABLE, ...
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Save file
 filename = 'alpha_phase_sync';
-folder = 'plots_data_14_02';
 alpha_text_par = sprintf('%s_%d_%d_%d', alpha_text_par, n1, n2);
 filename = sprintf('%s_%s', filename, alpha_text_par);
 time = datestr(clock,'YYYY_mm_dd_HH_MM_SS');
-filename = sprintf('%s/%s_%s.mat', folder, filename, time);
+filename = sprintf('%s_%s.mat', filename, time);
 save(filename, '-v7.3', '-nocompression')
 
 
@@ -80,13 +97,13 @@ function GAMMA_TABLE = gamma_iterate(g1, n, g_list, ...
     delta_phi_error = 0.005;
     d_list = 0:d_accuracy:d_max;
     num_of_iterations = length(g_list);
-    progressbar; % Set progress bar
+%    progressbar; % Set progress bar
     for k = 1:length(g_list)
         g2 = g_list(k);
         D_TABLE = d_iterate([g1; g2], d_list, n, ...
             alpha, delta_phi_error, error);
         GAMMA_TABLE(end + 1:end + size(D_TABLE, 1), 1:4) = D_TABLE;
-        progressbar(k/num_of_iterations); % Update progress bar
+%       progressbar(k/num_of_iterations); % Update progress bar
     end
 
 end
