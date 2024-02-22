@@ -1,11 +1,3 @@
-# TODO:
-# ADD delete unstable - done
-# TRY delete unstable new algorithm - done (from phase realisation)
-# ADAPTIVE GRID - done
-# ADD Parallelism for 
-#   CUDA - to do
-#   Threads - to do
-
 using DifferentialEquations
 using Plots
 using LaTeXStrings
@@ -55,6 +47,8 @@ D_NUM = length(D_LIST)
 const NUM_OF_COMPUTE_RES = 4;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
 SYNC = [zeros(5) for _ in 1:(D_NUM*G_NUM)]
+DEATH = [zeros(NUM) for _ in 1:(D_NUM*G_NUM)]
+
 
 const ALPHA_TEXT = L"π/8"
 const ALPHA = pi /  8
@@ -74,7 +68,7 @@ end
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
+    for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       G3 = G2 + DELTA;
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
@@ -85,20 +79,20 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         tspan = (a, b)
         
         p = ([d1, d2], ALPHA, [G1, G2, G3], PAR_N, NUM);
-        y0 = [0; 0]
+        y0 = [0; 0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
         Y = sol.u;
         T = sol.t;
 
         if (k_DELETE_TRANSIENT)
           index = DELETE_TRANSIENT(Y)
           start = T[index];
-          y0 = [start, start]
+          y0 = [start, start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-13, abstol=1e-14)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
           Y = sol.u;
           T = sol.t;
         end 
@@ -106,20 +100,27 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DIFF_SP_12, DIFF_BS_12, ratio_12, err_12 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2)
         DIFF_SP_23, DIFF_BS_23, ratio_23, err_23 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3)
 
+        err = vcat(err_12, err_23);
+        deleteat!(err, 2); # remove double record of second neuron
 
-        sync = [0, 0]
-        if (err == 0)
+        sync = zeros(NUM * 2);
+        if (sum(err_12) == 0)
           sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR);
+        end
+        if (sum(err_23) == 0)
           sync[3] = IS_SYNC(DIFF_BS_23, SYNC_ERROR);
           sync[4] = IS_SYNC(DIFF_SP_23, SYNC_ERROR);
+        end
+        if (sum(err) == 0)
           sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR);
           sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR);
         end
+
         delta = G2 - G1
-        # NUM_OF_COMPUTE_RES
-        DATA[m + (k-1)*D_NUM] = [d1, d2, ratio, delta]
+        DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
+        DEATH[m + (k-1)*D_NUM] = err;
     end
       println("Iteration $k of $num_of_iterations")
     end
@@ -141,16 +142,17 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2)
   k_DEBUG_PRINT && println("Spikes in $ind1: ", length(SPIKES1))
   k_DEBUG_PRINT && println("Spikes in $ind2: ", length(SPIKES2))
 
-  err = handle_errors(Bool(err1), Bool(err2));
-  if err != 0
+  global err = [err1, err2];
+
+  if sum(err) > 0 
       DIFF_SP = 0
       DIFF_BS = 0
-      ratio = -err
+      ratio = -1
       return (DIFF_SP, DIFF_BS, ratio, err)
   end
 
-  BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
-  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
+  global BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
+  global BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
 
@@ -172,24 +174,11 @@ function ADAPTIVE_GRID(num_of_bursts, reset)
   end
 end
 
-
-function handle_errors(err1::Bool, err2::Bool)
-  if err1 && err2
-      return  3
-  elseif err2
-      return  2
-  elseif err1
-      return  1
-  else
-      return  0
-  end
-end
-
 function FIND_SPIKES(Y, n)
-  Y = Y .% 2*pi;
-  SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
+  Y = mod.(Y, 2*pi)
+  global SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
   FIND_NEAR_POINTS(SPIKES)
-  if (length(SPIKES)/n < 3)
+  if (length(SPIKES)/n < 2)
     err = 1;
   else
     err = 0;
@@ -243,7 +232,7 @@ end
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
     while i < length(POINTS)
-        if POINTS[i+1] - POINTS[i] ==  1
+      if POINTS[i+1] - POINTS[i] == 1
             deleteat!(POINTS, i)
         else
             i +=  1
@@ -297,17 +286,18 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G, D, PAR_N)
-    Y = [mod.(y, 2 * pi) for y in Y]
-    for i in eachindex(PAR_N)
-      n_cur = PAR_N[i];
-      g_cur = G[i];
-      plot(T, getindex.(Y, i), label=L"n_%$i = %$n_cur , \gamma_{%$i}=%$g_cur")
-    end
-    title!(L"%$D")
-    ylims!(0,  2*pi)
-    xlabel!(L"t")
-    ylabel!(L"\varphi")
+function DRAW(T, Y, G1, G2, G3, D, PAR_N)
+  Y = [mod.(y, 2 * pi) for y in Y]
+  n1 = PAR_N[1];
+  n2 = PAR_N[2];
+  n3 = PAR_N[3];
+  plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
+  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
+  plot!(T, getindex.(Y, 3), label=L"n_3 = %$n3 , \gamma_{2}=%$G3")
+  title!(L"d = %$D")
+  ylims!(0,  2*pi)
+  xlabel!(L"t")
+  ylabel!(L"\varphi")
 end
 
 PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);

@@ -5,7 +5,6 @@ using JLD
 using Statistics
 using Dates
 
-
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
