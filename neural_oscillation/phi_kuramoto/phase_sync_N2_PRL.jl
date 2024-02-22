@@ -44,8 +44,8 @@ D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
-DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
-SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
+DATA_PRL = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
+SYNC_PRL = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
 const ALPHA_TEXT = L"π/8"
 const ALPHA = pi /  8
@@ -62,7 +62,7 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
+function PHASE_SYNC(DATA_PRL, SYNC_PRL, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
     for k in eachindex(G_LIST)
@@ -94,15 +94,15 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
 
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
 
-        sync = [0, 0]
+        SYNC_PRL = [0, 0]
         if (err == 0)
-          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          SYNC_PRL[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
+          SYNC_PRL[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
         delta = G2 - G1
         
-        DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
-        SYNC[m + (k-1)*D_NUM] = sync;
+        DATA_PRL[m + (k-1)*D_NUM] = [d, ratio, delta]
+        SYNC_PRL[m + (k-1)*D_NUM] = SYNC_PRL;
     end
       println("Iteration $k of $num_of_iterations")
     end
@@ -290,10 +290,10 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+PHASE_SYNC(DATA_PRL, SYNC_PRL, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
   time = Dates.format(now(),"yyyymmdd_HHMM");
   filename ="$time.jld2"
-  @save filename DATA SYNC
+  @save filename DATA_PRL SYNC_PRL
 end

@@ -132,8 +132,8 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
   SPIKES2, err2 = FIND_SPIKES(Y[:,ind2], PAR_N[ind2])
 
   if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(BURSTS1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(BURSTS2, err2, PAR_N[2], error)
+    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
+    unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
 
     SPIKES1 = SPIKES1[unstbl_1:end];
     SPIKES2 = SPIKES2[unstbl_2:end];
