@@ -4,22 +4,21 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
+using BenchmarkTools
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
+const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
 
-global a = 1000;
-global b = 2000;
 
 # For ADAPTIVE_GRID
 const init_b = 2000;
@@ -69,10 +68,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
     num_of_iterations = length(G_LIST)
     G1 = GStart;
     for k in eachindex(G_LIST)
-      G2 = G_LIST[k];
+      G2 = G_LIST[k]
       G3 = G2 + DELTA;
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
-      for m in eachindex(D_LIST)
+      for m in eachindex(D_LIST)        
+        a = 1000;
+        b = 2000;
+        # k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true, b);
         d1 = D_LIST[m]
         d2 = d1;
         
@@ -85,7 +86,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
         Y = sol.u;
         T = sol.t;
-
         if (k_DELETE_TRANSIENT)
           index = DELETE_TRANSIENT(Y)
           start = T[index];
@@ -97,8 +97,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           T = sol.t;
         end 
 
-        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2)
-        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3)
+        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
 
         err = vcat(err_12, err_23);
         deleteat!(err, 2); # remove double record of second neuron
@@ -121,12 +121,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
         DEATH[m + (k-1)*D_NUM] = err;
-    end
+      end
       println("Iteration $k of $num_of_iterations")
     end
 end
 
-function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2)
+function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,ind1], PAR_N[ind1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,ind2], PAR_N[ind2])
@@ -154,7 +154,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2)
   global BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
   global BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
+  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false, b))
 
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
@@ -163,8 +163,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2)
   return (DIFF_SP, DIFF_BS, ratio, err)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset)
-  global b;
+function ADAPTIVE_GRID(num_of_bursts, reset, b)
   if (reset == true)
     b = init_b;
   else   
@@ -254,7 +253,8 @@ end
 function FIND_DIFF(A1, A2, T)
     NEAR = []
     if (minimum.(A1) > minimum.(A2)) 
-      A1, A2 = A2, A1
+      A1 = copy(A2);
+      A2 = copy(A1);
     end
 
     for el in A2
@@ -292,8 +292,8 @@ function DRAW(T, Y, G1, G2, G3, D, PAR_N)
   n2 = PAR_N[2];
   n3 = PAR_N[3];
   plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
-  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
-  plot!(T, getindex.(Y, 3), label=L"n_3 = %$n3 , \gamma_{2}=%$G3")
+  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2, \gamma_{2}=%$G2")
+  plot!(T, getindex.(Y, 3), label=L"n_3 = %$n3, \gamma_{2}=%$G3")
   title!(L"d = %$D")
   ylims!(0,  2*pi)
   xlabel!(L"t")
