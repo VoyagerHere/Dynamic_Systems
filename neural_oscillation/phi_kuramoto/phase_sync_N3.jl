@@ -27,7 +27,7 @@ const ADAPTIVE_SET_ERROR = 10;
 
 const SPIKE_ERROR =  10
 
-
+name = "untitled"
 N1 = 1;
 N2 = 1;
 N3 = 1;
@@ -303,7 +303,7 @@ end
 PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
-  time = Dates.format(now(),"yyyymmdd_HHMM");
-  filename ="$time.jld2"
+  times = Dates.format(now(),"__yyyymmdd_HHMM");
+  filename ="$name$times.jld2"
   @save filename DATA SYNC
 end

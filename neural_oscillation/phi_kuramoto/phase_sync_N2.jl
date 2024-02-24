@@ -4,6 +4,8 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
+using ProfileView
+
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
@@ -28,14 +30,14 @@ const ADAPTIVE_SET_ERROR = 10;
 
 const SPIKE_ERROR =  10
 
-
+name = "untitled"
 N1 = 2
 N2 = 2
 const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 500
+const G_NUM = 2
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -290,10 +292,10 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+@profview PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
-  time = Dates.format(now(),"yyyymmdd_HHMM");
-  filename ="$time.jld2"
+  times = Dates.format(now(),"__yyyymmdd_HHMM");
+  filename ="$name$times.jld2"
   @save filename DATA SYNC
 end

@@ -30,7 +30,7 @@ const ADAPTIVE_SET_ERROR = 10;
 const SPIKE_ERROR =  10
 
 
-name = "fq_pi_8_n_2_2_2"
+name = "untitled"
 N1 = 2
 N2 = 2
 const NUM = 2;

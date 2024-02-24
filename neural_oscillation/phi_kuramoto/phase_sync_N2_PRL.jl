@@ -4,38 +4,32 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
+using ProfileView
+
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
+const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_UNSTABLE = true;
 
 const DATA_TAKE_ERROR = 0.05;
 
 
-global a = 1000;
-global b = 2000;
+
 
 # For ADAPTIVE_GRID
-const init_b = 2000;
-const b_step = 1000;
 const ADAPTIVE_SET_ERROR = 10;
+name = "untitled"
 
-const SPIKE_ERROR =  10
 
-
-N1 = 1
-N2 = 1
-const NUM = 2;
-global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 500
+const G_NUM = 20
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -44,11 +38,9 @@ D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
-DATA_PRL = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
-SYNC_PRL = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
+DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
+SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
-const ALPHA_TEXT = L"π/8"
-const ALPHA = pi /  8
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -62,14 +54,24 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-function PHASE_SYNC(DATA_PRL, SYNC_PRL, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
+function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
-    for k in eachindex(G_LIST)
+    Threads.@threads for k in eachindex(G_LIST)
+      PAR_N = [2, 2];
       G2 = G_LIST[k];
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
+      NUM = 2;
+      ALPHA = pi /  8
+      SPIKE_ERROR =  10
+
+      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true, b);
       for m in eachindex(D_LIST)
+        println("Task started on thread: ", Threads.threadid())
+
         d = D_LIST[m]
+        
+        a = 1000;
+        b = 2000;
         
         tspan = (a, b)
         
@@ -94,15 +96,16 @@ function PHASE_SYNC(DATA_PRL, SYNC_PRL, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIK
 
         DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
 
-        SYNC_PRL = [0, 0]
+        sync = [0, 0]
         if (err == 0)
-          SYNC_PRL[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          SYNC_PRL[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
+          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
         delta = G2 - G1
         
-        DATA_PRL[m + (k-1)*D_NUM] = [d, ratio, delta]
-        SYNC_PRL[m + (k-1)*D_NUM] = SYNC_PRL;
+        DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
+        SYNC[m + (k-1)*D_NUM] = sync;
+        println("Task finished on thread: ", Threads.threadid())
     end
       println("Iteration $k of $num_of_iterations")
     end
@@ -114,8 +117,8 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(BURSTS1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(BURSTS2, err2, PAR_N[2], error)
+    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
+    unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
 
     SPIKES1 = SPIKES1[unstbl_1:end];
     SPIKES2 = SPIKES2[unstbl_2:end];
@@ -135,7 +138,7 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
+  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false, b),)
   
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
@@ -144,8 +147,9 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   return (DIFF_SP, DIFF_BS, ratio, err)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset)
-  global b;
+function ADAPTIVE_GRID(num_of_bursts, reset, b)
+  init_b = 2000;
+  b_step = 1000;
   if (reset == true)
     b = init_b;
   else   
@@ -290,10 +294,10 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA_PRL, SYNC_PRL, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+VSCodeServer.@profview PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST);
 
 if k_IS_SAVE_DATA 
-  time = Dates.format(now(),"yyyymmdd_HHMM");
-  filename ="$time.jld2"
-  @save filename DATA_PRL SYNC_PRL
+  times = Dates.format(now(),"__yyyymmdd_HHMM");
+  filename ="$name$times.jld2"
+  @save filename DATA SYNC
 end
