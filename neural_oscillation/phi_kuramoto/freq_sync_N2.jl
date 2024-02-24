@@ -30,6 +30,7 @@ const ADAPTIVE_SET_ERROR = 10;
 const SPIKE_ERROR =  10
 
 
+name = "fq_pi_8_n_2_2_2"
 N1 = 2
 N2 = 2
 const NUM = 2;
@@ -271,8 +272,9 @@ end
 
 FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
 
+
 if k_IS_SAVE_DATA 
-  time = Dates.format(now(),"yyyymmdd_HHMM");
-  filename ="$time.jld2"
-  @save filename DATA
+  times = Dates.format(now(),"__yyyymmdd_HHMM");
+  filename ="$name$times.jld2"
+  @save filename DATA SYNC
 end
