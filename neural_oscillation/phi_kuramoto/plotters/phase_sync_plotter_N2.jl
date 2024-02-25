@@ -9,15 +9,26 @@ using Dates
 const NUM_OF_COMPUTE_RES = 4;
 G1 = 1.01;
 G2 = 1.02;
-name = ""
 alpha_txt = "π"
 
-@load "$name.jld2" DATA, SYNC
+
+
+@load "pi_2_3_n_2_2.jld2" DATA SYNC
 
 size = length(DATA)
+DATA = reduce(vcat,transpose.(DATA))
 D = DATA[:,1]
-RATIO = DATA[:,2]
+RATIO = round.(DATA[:,2], digits=1, RoundUp)
 DELTA = DATA[:,3]
+
+unique_ratios = unique(RATIO)
+for ratio in unique_ratios
+  if (ratio == NaN)
+    continue
+  end
+    
+
+end
 
 SYNC_BS = SYNC[:, 1]
 SYNC_SP = SYNC[:, 2]

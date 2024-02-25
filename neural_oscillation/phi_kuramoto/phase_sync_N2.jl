@@ -36,7 +36,7 @@ const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 20
+const G_NUM = 500
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -48,8 +48,7 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
-const ALPHA_TEXT = L"π/8"
-const ALPHA = pi /  8
+const ALPHA = 0
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -100,6 +99,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
+
+        # quasi-periodic
+        if (sum(sync) == 0)
+          ratio = 0
+        end
+          
         delta = G2 - G1
         
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
@@ -234,7 +239,7 @@ function FIND_NEAR_POINTS(POINTS)
 end
 
 function FIND_RATIO(A, B)
-    ratio = zeros(length(A) - 2)
+    ratio = zeros(Int64, length(A) - 2)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
