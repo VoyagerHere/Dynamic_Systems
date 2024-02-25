@@ -19,7 +19,6 @@ const k_DELETE_UNSTABLE = true;
 
 const DATA_TAKE_ERROR = 0.05;
 
-
 global a = 1000;
 global b = 2000;
 
@@ -37,7 +36,7 @@ const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 2
+const G_NUM = 20
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025

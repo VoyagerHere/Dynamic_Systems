@@ -15,21 +15,17 @@ const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = true;
+const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
-
-
-
 # For ADAPTIVE_GRID
 const ADAPTIVE_SET_ERROR = 10;
+
 name = "untitled"
-
-
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 20
+const G_NUM = 400
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -63,16 +59,15 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
       NUM = 2;
       ALPHA = pi /  8
       SPIKE_ERROR =  10
+              
+      a = 1000;
+      b = 2000;
 
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true, b);
       for m in eachindex(D_LIST)
-        println("Task started on thread: ", Threads.threadid())
+        # println("Task started on thread: ", Threads.threadid())
 
         d = D_LIST[m]
-        
-        a = 1000;
-        b = 2000;
-        
+
         tspan = (a, b)
         
         p = (d, ALPHA, [G1, G2], PAR_N, NUM);
@@ -94,7 +89,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
           T = sol.t;
         end 
 
-        DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+        DIFF_SP, DIFF_BS, ratio, err, b = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         sync = [0, 0]
         if (err == 0)
@@ -105,13 +100,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
         
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
-        println("Task finished on thread: ", Threads.threadid())
+        # println("Task finished on thread: ", Threads.threadid())
     end
-      println("Iteration $k of $num_of_iterations")
     end
 end
 
-function SYNC_PAIR(T, Y, PAR_N, error)
+function SYNC_PAIR(T, Y, PAR_N, error, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
@@ -132,32 +126,27 @@ function SYNC_PAIR(T, Y, PAR_N, error)
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -err
-      return (DIFF_SP, DIFF_BS, ratio, err)
+      return (DIFF_SP, DIFF_BS, ratio, err, b)
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false, b),)
+  k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b),)
   
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err)
+  return (DIFF_SP, DIFF_BS, ratio, err, b)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset, b)
-  init_b = 2000;
+function ADAPTIVE_GRID(num_of_bursts, b)
   b_step = 1000;
-  if (reset == true)
-    b = init_b;
-  else   
     if (num_of_bursts < ADAPTIVE_SET_ERROR)
-      b += b_step;
+      return b = b + b_step;
     end
   end
-end
 
 function handle_errors(err1::Bool, err2::Bool)
   if err1 && err2
@@ -294,7 +283,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-VSCodeServer.@profview PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST);
+PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST);
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

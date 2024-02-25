@@ -4,7 +4,6 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
-using ProfileView
 
 
 Plots.scalefontsizes()
@@ -19,63 +18,56 @@ const k_DELETE_UNSTABLE = true;
 
 const DATA_TAKE_ERROR = 0.05;
 
+global a = 8000;
+global b = 10000;
 
-global a = 1000;
-global b = 2000;
-
-# For ADAPTIVE_GRID
-const init_b = 2000;
+# For ADAPTIVE_GRID #обрезает берсты
+const init_b = 10000;
 const b_step = 1000;
 const ADAPTIVE_SET_ERROR = 10;
 
 const SPIKE_ERROR =  10
 
 name = "untitled"
-N1 = 2
+N1 = 2 
 N2 = 2
 const NUM = 2;
+const K = -500
 global PAR_N = [N1, N2];
-const D_MAX =  0.07
-const D_ACCURACY =  0.0001
-const G_NUM = 2
+const D_MAX =  1.5
+const D_ACCURACY =  0.005
+const gamma1 = 1.01
+const gamma2 = 1.01
 const SYNC_ERROR =  0.05
-const GStart =  1.01
-const DELTA =  0.025
-G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
+const sigma_MAX = pi
+const sigma_ACCURACY =  0.005
+sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
+sigma_NUM = length(sigma_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
-DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
-SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
+DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
+SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-const ALPHA_TEXT = L"π/8"
-const ALPHA = pi /  8
-
-function eqn!(du, u, p, t)
-  d, alpha, g, n, dim_size = p
+function eqn!(du, u, p, t)#u - это тета
+  d, sigma, g, n, dim_size = p
   f = g .- sin.(u ./ n)
-  exch = zeros(dim_size)
-  for i in 1:dim_size
-    for j in 1:dim_size-1
-      exch[i] += d[j] * sin(u[j] - u[i] - alpha)
-    end
-  end
-  du .= f + exch
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  du .= f - exch
 end
 
-function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    num_of_iterations = length(G_LIST)
-    G1 = GStart;
-    for k in eachindex(G_LIST)
-      G2 = G_LIST[k];
+function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
+    num_of_iterations = length(sigma_LIST)
+    for k in eachindex(sigma_LIST)
+      sigma = sigma_LIST[k];
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
         tspan = (a, b)
         
-        p = (d, ALPHA, [G1, G2], PAR_N, NUM);
+        p = (d, sigma, [gamma1, gamma2],  PAR_N, NUM);
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
@@ -101,9 +93,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
-        delta = G2 - G1
         
-        DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
+        
+        DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
         SYNC[m + (k-1)*D_NUM] = sync;
     end
       println("Iteration $k of $num_of_iterations")
@@ -168,7 +160,6 @@ function handle_errors(err1::Bool, err2::Bool)
       return  0
   end
 end
-
 function FIND_SPIKES(Y, n)
   Y = mod.(Y, 2*pi)
   SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
@@ -280,19 +271,19 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G1, G2, D, PAR_N)
+function DRAW(T, Y, gamma1, gamma2, D, PAR_N)
     Y = [mod.(y, 2 * pi) for y in Y]
     n1 = PAR_N[1];
     n2 = PAR_N[2];
-    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
-    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
+    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$gamma1")
+    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$gamma2")
     title!(L"d = %$D")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")
 end
 
-@profview PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
