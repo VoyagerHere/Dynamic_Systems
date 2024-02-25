@@ -96,6 +96,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
         end
+
+        # quasi-periodic
+        if (sum(sync) == 0)
+          ratio = 0
+        end
+
         delta = G2 - G1
         
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
@@ -226,7 +232,7 @@ function FIND_NEAR_POINTS(POINTS)
 end
 
 function FIND_RATIO(A, B)
-    ratio = zeros(length(A) - 2)
+    ratio = zeros(Int64, length(A) - 2)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
