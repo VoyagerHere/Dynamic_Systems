@@ -99,12 +99,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
             ratio = 0
           end
         end
-
-        # quasi-periodic
-        if (sum(sync) == 0)
-          ratio = 0
-        end
-
+        
         delta = G2 - G1
         
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
