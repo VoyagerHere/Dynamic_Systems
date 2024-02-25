@@ -4,7 +4,7 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
-using ProfileView
+# using ProfileView
 
 
 Plots.scalefontsizes()
@@ -243,7 +243,7 @@ function FIND_RATIO(A, B)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
-    return mean(ratio)
+    return Int64.(floor(mean(ratio)))
 end
 
 # Find near spike by left for spike from A1
@@ -296,7 +296,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-@profview PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

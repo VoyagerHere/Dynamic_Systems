@@ -236,7 +236,7 @@ function FIND_RATIO(A, B)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
-    return mean(ratio)
+    return Int64.(floor(mean(ratio)))
 end
 
 # Find near spike by left for spike from A1
