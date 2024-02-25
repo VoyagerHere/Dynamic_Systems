@@ -98,11 +98,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
-        end
-
-        # quasi-periodic
-        if (sum(sync) == 0)
-          ratio = 0
+          if (sum(sync) == 0)
+            ratio = 0
+          end
         end
           
         delta = G2 - G1

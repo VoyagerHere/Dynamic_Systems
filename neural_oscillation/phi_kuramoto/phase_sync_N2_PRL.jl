@@ -95,6 +95,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          if (sum(sync) == 0)
+            ratio = 0
+          end
         end
 
         # quasi-periodic

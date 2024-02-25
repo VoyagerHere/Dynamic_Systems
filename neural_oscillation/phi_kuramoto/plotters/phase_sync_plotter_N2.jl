@@ -13,12 +13,12 @@ alpha_txt = "π"
 
 
 
-@load "pi_8_2_2.jld2" DATA SYNC
+@load "pi_8.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
 D = DATA[:,1]
-RATIO = round.(DATA[:,2], digits=1, RoundUp)
+RATIO = Int.(DATA[:,2])
 DELTA = DATA[:,3]
 
 unique_ratios = unique(RATIO)
@@ -26,8 +26,11 @@ for ratio in unique_ratios
   if (ratio == NaN)
     continue
   end
-    
+  ratio_ind = findall(x -> x== ratio, RATIO)
 
+  if (ratio == 0)
+    scatter!(p, d[ratio_index], delta[ratio_index], color=gray_color, label="S1: Quasi-Periodic")
+  
 end
 
 SYNC_BS = SYNC[:, 1]
