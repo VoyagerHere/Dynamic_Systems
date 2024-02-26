@@ -35,12 +35,12 @@ N1 = 2
 N2 = 2
 const NUM = 2;
 global PAR_N = [N1, N2];
-const D_MAX =  0.07
-const D_ACCURACY =  0.0001
+const D_MAX =  0.04
+const D_ACCURACY =  0.00001
 const G_NUM = 500
 const SYNC_ERROR =  0.05
 const GStart =  1.01
-const DELTA = 0.01;
+const DELTA = 0.005;
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 
@@ -96,7 +96,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     ratio = w_1 / w_2;
 
     if (err != 0)
-      break;
+      DATA[m] = [D, w_1, w_2, -err]
+      continue;
     end
 
     DATA[m] = [D, w_1, w_2, ratio]
@@ -122,10 +123,7 @@ function SYNC_PAIR(T, Y, PAR_N, error)
 
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
-      DIFF_SP = 0
-      DIFF_BS = 0
-      ratio = -err
-      return (DIFF_SP, DIFF_BS, ratio, err)
+      return (0, 0, err)
   end
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(SPIKES1), length(SPIKES1)]), false))
@@ -276,5 +274,5 @@ FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
   filename ="$name$times.jld2"
-  @save filename DATA SYNC
+  @save filename DATA
 end
