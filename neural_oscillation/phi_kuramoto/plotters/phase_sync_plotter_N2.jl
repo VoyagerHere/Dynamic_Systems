@@ -1,21 +1,22 @@
 using DifferentialEquations
-using Plots
+# using Plots
 using LaTeXStrings
 using JLD
 using Statistics
 using Dates
 
-plotlyjs()
+using PythonPlot
+pygui(true)
 
-Plots.scalefontsizes()
-Plots.scalefontsizes(1.5)
+#Plots.scalefontsizes()
+# Plots.scalefontsizes(1.5)
 
-G1 = 1.01;
+G1 = 0;
 alpha_txt = "π/8"
-N1 = 2;
-N2 = 2;
+N1 = 0;
+N2 = 0;
 
-@load "pi_8_2.jld2" DATA SYNC
+@load "name.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -30,33 +31,45 @@ Burst_Sync = findall(x -> x ==  1, SYNC[:,1])
 Spike_Sync = findall(x -> x ==  1, SYNC[:,2])
 
 counter_field = 1;
+
+PythonPlot.matplotlib.rcParams["font.size"] = 14
+size_sc = 4
+
+unique_ratios = sort!(unique_ratios, alg=InsertionSort);
+
 for ratio in unique_ratios
   if (ratio == NaN)
     continue
-  end
+  end 
   ratio_ind = findall(x -> x == ratio, RATIO_VEC)
-
   if (ratio == 0)
-    scatter!(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], label=L"S_%$counter_field: Quasi-Periodic")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "gray", label=L"$S_{1}$: Q-P")
     global counter_field+=1;
   elseif (ratio == -1)
-    scatter!(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], label=L"S_%$counter_field: Death \phi_1")
-    global counter_field+=1;
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "darkgrey", label=L"$S_{2}$: D $\varphi_1$")
+    global counter_field += 1;
   elseif (ratio == -2)
-    scatter!(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], label=L"S_%$counter_field: Death \phi_2")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "slategrey", label=L"$S_{3}$: D $\varphi_2$")
     global counter_field +=1;
   elseif (ratio == -3)
-    scatter!(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], label=L"S_%$counter_field: Death \phi_1, \phi_2")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "black", label=L"$S_{4}$: D $\varphi_1, \varphi_2$")
     global counter_field +=1;
   else
     Burst_p = intersect(Burst_Sync, ratio_ind)
     Spike_p = intersect(Spike_Sync, ratio_ind)
-    scatter!(D_VEC[Burst_p], DELTA_VEC[Burst_p], label=L"S_%$counter_field Burst sync  1:%$ratio") 
+    scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S_{%$counter_field}$: BS  1:%$ratio") 
     global counter_field+=1
-    scatter!(D_VEC[Spike_p], DELTA_VEC[Spike_p], label=L"S_%$counter_field Spike sync  1:%$ratio")
+    scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S_{%$counter_field}$: SS 1:%$ratio")
     global counter_field+=1
   end
 end
-title!(L"n_1 = %$N1, n_2 = %$N2,  \alpha = %$alpha_txt, \gamma_{1}=1.01, \gamma_{2}=\gamma_{1}+\DELTA_VEC")
-xlabel!(L"d")
-ylabel!(L"\delta")
+# legend(loc="lower right", fontsize=10)
+legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=10)
+
+for handle in lgnd.legend_handles
+  handle.set_markersize([6.0])
+end
+
+title(L"$n_1$ = %$N1, $n_2$ = %$N2,  $\alpha$ = %$alpha_txt")
+xlabel(L"d")
+ylabel(L"\Delta")

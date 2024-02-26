@@ -4,7 +4,6 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
-using ProfileView
 
 
 Plots.scalefontsizes()
