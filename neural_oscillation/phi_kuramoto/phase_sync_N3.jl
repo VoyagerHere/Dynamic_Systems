@@ -26,9 +26,9 @@ const ADAPTIVE_SET_ERROR = 10;
 const SPIKE_ERROR =  10
 
 name = "untitled"
-N1 = 1;
-N2 = 1;
-N3 = 1;
+N1 = 2;
+N2 = 2;
+N3 = 2;
 const NUM = 3;
 global PAR_N = [N1, N2, N3];
 const D_MAX =  0.07
@@ -70,7 +70,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
       a = 1000;
       b = 2000;
       for m in eachindex(D_LIST)        
-        # k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true, b);
         d1 = D_LIST[m]
         d2 = d1;
         
@@ -142,12 +141,11 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -1
-      return (DIFF_SP, DIFF_BS, ratio, err)
+      return (DIFF_SP, DIFF_BS, ratio, err, b)
   end
 
-   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
-   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
-
+  BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
+  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
 
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
@@ -163,7 +161,10 @@ end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
     if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
-      return b = b + b_step;
+      b_ret = b + b_step;
+      return b_ret;
+    else
+      return b;
     end
 end
 
