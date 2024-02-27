@@ -10,25 +10,25 @@ using Dates
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
-const k_DEBUG_PRINT = false
+const k_ENABLE_ADAPTIVE_GRID = true;
+const k_DEBUG_PRINT = true
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_UNSTABLE = true;
 
 const DATA_TAKE_ERROR = 0.05;
 
 global a = 1000;
-global b = 3000;
+global b = 2000;
 
 # For ADAPTIVE_GRID
 const init_b = 2000;
-const b_step = 2000;
+const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
-const SPIKE_ERROR =  20
+const SPIKE_ERROR =  10
 
 name = "untitled"
 N1 = 2
@@ -118,6 +118,7 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
+
   if (k_DELETE_UNSTABLE)
     unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
     unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
@@ -125,9 +126,6 @@ function SYNC_PAIR(T, Y, PAR_N, error)
     SPIKES1 = SPIKES1[unstbl_1:end];
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
-
-  k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
-  k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
 
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
@@ -140,8 +138,11 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
 
+  k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
+  k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
+
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
-  
+
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
@@ -195,13 +196,14 @@ end
 function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   UNSTBL = 1
   if err > 0
-      return UNSTBL
+    return UNSTBL
   end
   B = zeros(Int64, div(length(SPIKES), n))
   for m in n:n:length(SPIKES)
     B[div(m, n)] = SPIKES[m]
   end
-  if length(B) < unstable_err + 2
+  if length(B) < 2*unstable_err 
+      # err = 1;
       return UNSTBL
   end
   element = B[unstable_err]
