@@ -4,25 +4,23 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
-using BenchmarkTools
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
+const k_ENABLE_ADAPTIVE_GRID = false;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false;
+const k_IS_SAVE_DATA = false;
+const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
 
-
 # For ADAPTIVE_GRID
 const init_b = 2000;
-const b_step = 1000;
+const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
 const SPIKE_ERROR =  10
@@ -49,8 +47,7 @@ SYNC = [zeros(5) for _ in 1:(D_NUM*G_NUM)]
 DEATH = [zeros(NUM) for _ in 1:(D_NUM*G_NUM)]
 
 
-const ALPHA_TEXT = L"π/8"
-const ALPHA = pi /  8
+const ALPHA = 0
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -70,9 +67,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
     for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
+      a = 1000;
+      b = 2000;
       for m in eachindex(D_LIST)        
-        a = 1000;
-        b = 2000;
         # k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true, b);
         d1 = D_LIST[m]
         d2 = d1;
@@ -97,9 +94,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           T = sol.t;
         end 
 
-        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
-        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
-
+        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
+        b = max(b1, b2);
         err = vcat(err_12, err_23);
         deleteat!(err, 2); # remove double record of second neuron
 
@@ -139,10 +136,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
-  k_DEBUG_PRINT && println("Spikes in $ind1: ", length(SPIKES1))
-  k_DEBUG_PRINT && println("Spikes in $ind2: ", length(SPIKES2))
-
-  global err = [err1, err2];
+  err = [err1, err2];
 
   if sum(err) > 0 
       DIFF_SP = 0
@@ -151,33 +145,33 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
       return (DIFF_SP, DIFF_BS, ratio, err)
   end
 
-  global BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
-  global BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
+   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
+   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[ind2])
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false, b))
+
+  k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
+  k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
+
+  k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b))
 
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err)
+  return (DIFF_SP, DIFF_BS, ratio, err, b)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset, b)
-  if (reset == true)
-    b = init_b;
-  else   
-    if (num_of_bursts < ADAPTIVE_SET_ERROR)
-      b += b_step;
+function ADAPTIVE_GRID(num_of_bursts, b)
+    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
+      return b = b + b_step;
     end
-  end
 end
 
 function FIND_SPIKES(Y, n)
   Y = mod.(Y, 2*pi)
-  global SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
+  SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
   FIND_NEAR_POINTS(SPIKES)
-  if (length(SPIKES)/n < 2)
+  if (length(SPIKES)/n < 3)
     err = 1;
   else
     err = 0;
@@ -202,11 +196,11 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   for m in n:n:length(SPIKES)
     B[div(m, n)] = SPIKES[m]
   end
-  if length(B) < unstable_err + 2
+  if length(B) < 2*unstable_err
       return UNSTBL
   end
   element = B[unstable_err]
-  global UNSTBL = findall(SPIKES .== element)
+  UNSTBL = findall(SPIKES .== element)
   if isempty(UNSTBL)
       UNSTBL = 1
   end
@@ -217,9 +211,9 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
-      global rel_change_3 = abs((Y[i][3] - Y[i-1][3]) / Y[i-1][3])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_3 = abs((Y[i][3] - Y[i-1][3]) / Y[i-1][3])
       if ((rel_change_1 < tol) && (rel_change_2 < tol) && (rel_change_3 < tol))
           return i
       end
@@ -240,11 +234,11 @@ function FIND_NEAR_POINTS(POINTS)
 end
 
 function FIND_RATIO(A, B)
-    ratio = zeros(length(A) - 2)
-    for i in 2:length(A) - 1
-        ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
-    end
-    return mean(ratio)
+  ratio = zeros(Int64, length(A) - 2)
+  for i in 2:length(A) - 1
+      ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
+  end
+  return Int64.(floor(mean(ratio)))
 end
 
 # Find near spike by left for spike from A1
@@ -253,8 +247,7 @@ end
 function FIND_DIFF(A1, A2, T)
     NEAR = []
     if (minimum.(A1) > minimum.(A2)) 
-      A1 = copy(A2);
-      A2 = copy(A1);
+      A1, A2 = A2, A1
     end
 
     for el in A2

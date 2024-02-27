@@ -23,9 +23,10 @@ global b = 10000;
 
 # For ADAPTIVE_GRID #обрезает берсты
 const init_b = 10000;
-const b_step = 1000;
+const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
+# For DELETE_UNSTABLE
 const SPIKE_ERROR =  10
 
 name = "untitled"
@@ -36,8 +37,9 @@ const K = -500
 global PAR_N = [N1, N2];
 const D_MAX =  1.5
 const D_ACCURACY =  0.005
+DELTA = 0.001
 const gamma1 = 1.01
-const gamma2 = 1.01
+const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.05
 const sigma_MAX = pi
 const sigma_ACCURACY =  0.005
@@ -50,11 +52,20 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-function eqn!(du, u, p, t)#u - это тета
+
+function eqn!(du, u, p, t)
   d, sigma, g, n, dim_size = p
+  F1, F2 = check_condition(u, sigma)
   f = g .- sin.(u ./ n)
-  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  exch = d*[F2, F1]
   du .= f - exch
+end
+
+
+function check_condition(y, sigma)
+  F1 = y[1] > pi/2 - sigma && y[1] < pi/2 + sigma ?  0 :  1
+  F2 = y[2] > pi/2 - sigma && y[2] < pi/2 + sigma ?  0 :  1
+  return F1, F2
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
@@ -68,7 +79,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
         tspan = (a, b)
         
         p = (d, sigma, [gamma1, gamma2],  PAR_N, NUM);
-        y0 = [0; 0]
+        y0 = [pi/2; pi/2]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
@@ -92,6 +103,9 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          if (sum(sync) == 0)
+            ratio = 0
+          end
         end
         
         
@@ -115,9 +129,6 @@ function SYNC_PAIR(T, Y, PAR_N, error)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
-  k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
-  k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
-
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
       DIFF_SP = 0
@@ -127,7 +138,9 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
-  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
+  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
+  k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
+  k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
   
@@ -143,7 +156,7 @@ function ADAPTIVE_GRID(num_of_bursts, reset)
   if (reset == true)
     b = init_b;
   else   
-    if (num_of_bursts < ADAPTIVE_SET_ERROR)
+    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
       b += b_step;
     end
   end
@@ -160,6 +173,7 @@ function handle_errors(err1::Bool, err2::Bool)
       return  0
   end
 end
+
 function FIND_SPIKES(Y, n)
   Y = mod.(Y, 2*pi)
   SPIKES = findall(x -> abs.(x - 2*pi) < DATA_TAKE_ERROR, Y )
@@ -189,11 +203,12 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   for m in n:n:length(SPIKES)
     B[div(m, n)] = SPIKES[m]
   end
-  if length(B) < unstable_err + 2
-      return UNSTBL
+  if length(B) < 2*unstable_err 
+    # err = 1;
+    return UNSTBL
   end
   element = B[unstable_err]
-  global UNSTBL = findall(SPIKES .== element)
+  UNSTBL = findall(SPIKES .== element)
   if isempty(UNSTBL)
       UNSTBL = 1
   end
@@ -204,8 +219,8 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
       if ((rel_change_1 < tol) && (rel_change_2 < tol))
           return i
       end
@@ -226,11 +241,11 @@ function FIND_NEAR_POINTS(POINTS)
 end
 
 function FIND_RATIO(A, B)
-    ratio = zeros(length(A) - 2)
+    ratio = zeros(Int64, length(A) - 2)
     for i in 2:length(A) - 1
         ratio[i - 1] = sum(B .< A[i + 1]) - sum(B .< A[i])
     end
-    return mean(ratio)
+    return Int64.(floor(mean(ratio)))
 end
 
 # Find near spike by left for spike from A1

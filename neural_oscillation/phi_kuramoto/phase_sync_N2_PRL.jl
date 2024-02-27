@@ -9,10 +9,10 @@ using Dates
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
+const k_ENABLE_ADAPTIVE_GRID = false;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
+const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 
@@ -24,7 +24,7 @@ const ADAPTIVE_SET_ERROR = 10;
 name = "untitled"
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 400
+const G_NUM = 500
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -56,7 +56,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
       PAR_N = [2, 2];
       G2 = G_LIST[k];
       NUM = 2;
-      ALPHA = pi /  8
+      ALPHA = 0
       SPIKE_ERROR =  10
               
       a = 1000;
@@ -103,7 +103,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
         
         DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         SYNC[m + (k-1)*D_NUM] = sync;
-        # println("Task finished on thread: ", Threads.threadid())
     end
     end
 end
@@ -121,9 +120,6 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
-  k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
-  k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
-
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
       DIFF_SP = 0
@@ -135,6 +131,9 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
 
+  k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
+  k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
+
   k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b),)
   
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
@@ -145,8 +144,8 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
-  b_step = 1000;
-    if (num_of_bursts < ADAPTIVE_SET_ERROR)
+  b_step = 3000;
+  if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
       return b = b + b_step;
     end
   end
@@ -192,7 +191,8 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   for m in n:n:length(SPIKES)
     B[div(m, n)] = SPIKES[m]
   end
-  if length(B) < unstable_err + 2
+  if length(B) < 2*unstable_err 
+      # err = 1;
       return UNSTBL
   end
   element = B[unstable_err]
@@ -207,8 +207,8 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
       if ((rel_change_1 < tol) && (rel_change_2 < tol))
           return i
       end

@@ -4,18 +4,17 @@ using LaTeXStrings
 using JLD
 using Statistics
 using Dates
-# using ProfileView
 
 
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
-const k_DEBUG_PRINT = true
+const k_ENABLE_ADAPTIVE_GRID = false;
+const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
+const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = true;
+const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
@@ -117,7 +116,6 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
-
 
   if (k_DELETE_UNSTABLE)
     unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
