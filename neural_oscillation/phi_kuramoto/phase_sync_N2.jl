@@ -10,24 +10,25 @@ using Dates
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
+const k_ENABLE_ADAPTIVE_GRID = false;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
+const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = true;
+const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
 global a = 1000;
-global b = 2000;
+global b = 3000;
 
 # For ADAPTIVE_GRID
 const init_b = 2000;
-const b_step = 1000;
+const b_step = 2000;
 const ADAPTIVE_SET_ERROR = 10;
 
-const SPIKE_ERROR =  10
+# For DELETE_UNSTABLE
+const SPIKE_ERROR =  20
 
 name = "untitled"
 N1 = 2
@@ -153,7 +154,7 @@ function ADAPTIVE_GRID(num_of_bursts, reset)
   if (reset == true)
     b = init_b;
   else   
-    if (num_of_bursts < ADAPTIVE_SET_ERROR)
+    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
       b += b_step;
     end
   end
@@ -204,7 +205,7 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
       return UNSTBL
   end
   element = B[unstable_err]
-  global UNSTBL = findall(SPIKES .== element)
+  UNSTBL = findall(SPIKES .== element)
   if isempty(UNSTBL)
       UNSTBL = 1
   end
@@ -215,8 +216,8 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
       if ((rel_change_1 < tol) && (rel_change_2 < tol))
           return i
       end
