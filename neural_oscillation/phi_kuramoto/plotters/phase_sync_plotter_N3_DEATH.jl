@@ -17,7 +17,7 @@ N2 = 0;
 # points to plot area
 accuracy = 0;
 
-@load "name.jld2" DATA SYNC
+@load "name.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -37,15 +37,15 @@ counter_field = 1;
 PythonPlot.matplotlib.rcParams["font.size"] = 14
 size_sc = 4
 
-DEAD1 = findall(x -> x ==  1, DEAD[:,1])
-DEAD2 = findall(x -> x ==  1, DEAD[:,2])
-DEAD3 = findall(x -> x ==  1, DEAD[:,3])
+DEAD1 = findall(x -> x ==  1, DEATH_MATR[:,1])
+DEAD2 = findall(x -> x ==  1, DEATH_MATR[:,2])
+DEAD3 = findall(x -> x ==  1, DEATH_MATR[:,3])
 DEAD_ALL = intersect(DEAD1, DEAD2, DEAD3)
 QUASI_PERIODIC = findall(x -> x ==  0, DEAD_ALL)
 
 global counter_field+=1;
 
-if(length(DEAQUASI_PERIODICD1) > accuracy)
+if(length(QUASI_PERIODIC) > accuracy)
   scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color = "snow", s=size_sc, label=L"$S_{1}$: Q-P")
   global counter_field+=1;
 end
