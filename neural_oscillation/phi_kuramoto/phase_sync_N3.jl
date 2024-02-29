@@ -5,33 +5,29 @@ using JLD
 using Statistics
 using Dates
 
-Plots.scalefontsizes()
-Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
+const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
-
-# For ADAPTIVE_GRID
-const init_b = 2000;
-const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
-
 const SPIKE_ERROR =  10
 
-name = "untitled"
-N1 = 2;
-N2 = 2;
-N3 = 2;
+name = "pi_8"
+N1 = 3;
+N2 = 3;
+N3 = 3;
 const NUM = 3;
+const ALPHA = 0
+
+
 global PAR_N = [N1, N2, N3];
-const D_MAX =  0.07
+const D_MAX =  0.02
 const D_ACCURACY =  0.0001
 const G_NUM = 500
 const SYNC_ERROR =  0.05
@@ -46,9 +42,6 @@ DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
 SYNC = [zeros(5) for _ in 1:(D_NUM*G_NUM)]
 DEATH = [zeros(NUM) for _ in 1:(D_NUM*G_NUM)]
 
-
-const ALPHA = 0
-
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
   f = g .- sin.(u ./ n)
@@ -62,13 +55,12 @@ function eqn!(du, u, p, t)
 end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    num_of_iterations = length(G_LIST)
     G1 = GStart;
-    for k in eachindex(G_LIST)
+    Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
-      a = 1000;
-      b = 2000;
+      a = 10000;
+      b = 14000;
       for m in eachindex(D_LIST)        
         d1 = D_LIST[m]
         d2 = d1;
@@ -79,7 +71,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        saveat_points = a:0.001:b
+        sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
         Y = sol.u;
         T = sol.t;
         if (k_DELETE_TRANSIENT)
@@ -88,7 +81,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           y0 = [start, start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+          saveat_points = a:0.001:b
+          sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
           Y = sol.u;
           T = sol.t;
         end 
@@ -118,7 +112,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         SYNC[m + (k-1)*D_NUM] = sync;
         DEATH[m + (k-1)*D_NUM] = err;
       end
-      println("Iteration $k of $num_of_iterations")
     end
 end
 
@@ -160,6 +153,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
+    b_step = 3000
     if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
       b_ret = b + b_step;
       return b_ret;
@@ -299,5 +293,5 @@ PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
   filename ="$name$times.jld2"
-  @save filename DATA SYNC
+  @save filename DATA SYNC DEATH
 end

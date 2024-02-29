@@ -9,7 +9,7 @@ using Dates
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = true;
+const k_ENABLE_ADAPTIVE_GRID = false;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
@@ -18,21 +18,22 @@ const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
-
-global a = 1000;
-global b = 2000;
+global a = 8000;
+global b = 9000;
 
 # For ADAPTIVE_GRID
-const init_b = 2000;
-const b_step = 4000;
+const init_b = 9000;
+const b_step = 3000;
+
 const ADAPTIVE_SET_ERROR = 10;
+const SPIKE_ERROR =  0
 
-const SPIKE_ERROR =  10
 
-
-name = "untitled"
+name = "pi_8__2_2"
+const ALPHA = pi / 8
 N1 = 2
 N2 = 2
+
 const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.04
@@ -47,11 +48,11 @@ D_NUM = length(D_LIST)
 G1 = 1.01;
 G2 = G1 + DELTA;
 
-const NUM_OF_COMPUTE_RES = 4;
+const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:D_NUM]
+W = [zeros(NUM*2) for _ in 1:D_NUM]
 
 const ALPHA_TEXT = L"π/8"
-const ALPHA = pi /  8
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -77,7 +78,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     y0 = [0; 0]
 
     prob = ODEProblem(eqn!, y0, tspan, p)
-    sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+    saveat_points = a:0.001:b
+    sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
     global Y = sol.u;
     global T = sol.t;
 
@@ -87,35 +89,40 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
       y0 = [start, start]
 
       prob = ODEProblem(eqn!, y0, tspan, p)
-      sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+      sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14)
       Y = sol.u;
       T = sol.t;
     end
 
-    w_1, w_2, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
-    ratio = w_1 / w_2;
+    w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+    ratio_s = w_s[1] / w_s[2];
+    ratio_b = w_b[1] / w_b[2];
 
     if (err != 0)
-      DATA[m] = [D, w_1, w_2, -err]
+      DATA[m] = [D, -err, -err]
       continue;
     end
 
-    DATA[m] = [D, w_1, w_2, ratio]
+    DATA[m] = [D, ratio_s, ratio_b]
+    W[m] = vcat(w_s, w_b)
     println("Iteration $m of $num_of_iterations")
+    return;
   end
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
-  global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
     unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
     unstbl_2 = DELETE_UNSTBL(SPIKES1, err2, PAR_N[2], error)
 
-    SPIKES1 = SPIKES1[unstbl_1:end];
-    SPIKES2 = SPIKES2[unstbl_2:end];
+    untsbl_ind = max(unstbl_1, unstbl_2)
+
+    SPIKES1 = SPIKES1[untsbl_ind:end];
+    SPIKES2 = SPIKES2[untsbl_ind:end];
   end
 
   k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
@@ -123,24 +130,26 @@ function SYNC_PAIR(T, Y, PAR_N, error)
 
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
-      return (0, 0, err)
+      return ([0, 0], [0, 0], err)
   end
 
   k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(SPIKES1), length(SPIKES1)]), false))
 
-  global Times_1 = FIND_TIMES(SPIKES1, T);
-  global Times_2 = FIND_TIMES(SPIKES2, T);
+  Times_1 = FIND_TIMES(SPIKES1, T, PAR_N);
+  Times_2 = FIND_TIMES(SPIKES2, T, PAR_N);
 
-  DEL_MIDDLE_BURST_INTRVL(PAR_N[1], Times_1)
-  DEL_MIDDLE_BURST_INTRVL(PAR_N[2], Times_2)
+  Times_SP_1 = DEL_MIDDLE_BURST_INTRVL(PAR_N[1], Times_1)
+  Times_SP_2 = DEL_MIDDLE_BURST_INTRVL(PAR_N[2], Times_2)
 
   avg(x) = (ones(length(x)) / length(x))'*x
 
+  wb_1 = 2*pi./sum(Times_1);
+  wb_2 = 2*pi./sum(Times_2);
 
-  ws_1 = 2*pi./avg(Times_1);
-  ws_2 = 2*pi./avg(Times_2);
+  ws_1 = 2*pi./avg(Times_SP_1);
+  ws_2 = 2*pi./avg(Times_SP_2);
 
-  return (ws_1, ws_2, err)
+  return ([ws_1, ws_2], [wb_1, wb_2], err)
 end
 
 avg(x) = (ones(length(x)) / length(x))'*x
@@ -168,10 +177,10 @@ function ADAPTIVE_GRID(num_of_bursts, reset)
   end
 end
 
-function FIND_TIMES(SPIKES, T)
-  len = length(SPIKES);
-  TIMES = zeros(len-1);
-  for k in 2:len
+function FIND_TIMES(SPIKES, T, NUM)
+  len = maximum(NUM);
+  TIMES = zeros(len);
+  for k in 2:(len+1)
     val1 = SPIKES[k-1]
     val2 = SPIKES[k]
     TIMES[k-1] = T[val2] - T[val1];
@@ -181,9 +190,10 @@ end
 
 function DEL_MIDDLE_BURST_INTRVL(n, T)
   if (n > 1)
-    sort(T, rev=true)
+    T = sort(T, rev = true)
     T = T[2:end]
   end
+  return T;
 end
 
 function handle_errors(err1::Bool, err2::Bool)
@@ -203,8 +213,8 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
       if ((rel_change_1 < tol) && (rel_change_2 < tol))
           return i
       end
@@ -226,7 +236,7 @@ function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
       return UNSTBL
   end
   element = B[unstable_err]
-  global UNSTBL = findall(SPIKES .== element)
+  UNSTBL = findall(SPIKES .== element)
   if isempty(UNSTBL)
       UNSTBL = 1
   end
@@ -274,5 +284,5 @@ FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
   filename ="$name$times.jld2"
-  @save filename DATA
+  @save filename DATA W
 end

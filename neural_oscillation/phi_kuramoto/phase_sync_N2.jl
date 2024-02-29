@@ -6,23 +6,21 @@ using Statistics
 using Dates
 
 
-Plots.scalefontsizes()
-Plots.scalefontsizes(1.5)
 
-const k_ENABLE_ADAPTIVE_GRID = false;
+const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = false;
+const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
-global a = 1000;
-global b = 2000;
+global a = 8000;
+global b = 10000;
 
 # For ADAPTIVE_GRID
-const init_b = 2000;
+const init_b = 10000;
 const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
@@ -32,6 +30,9 @@ const SPIKE_ERROR =  10
 name = "untitled"
 N1 = 2
 N2 = 2
+const ALPHA = 0
+
+
 const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.07
@@ -48,7 +49,6 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
-const ALPHA = 0
 
 function eqn!(du, u, p, t)
   d, alpha, g, n, dim_size = p
@@ -77,7 +77,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        saveat_points = a:0.001:b
+        sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
         Y = sol.u;
         T = sol.t;
 
@@ -87,7 +88,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           y0 = [start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+          saveat_points = a:0.001:b
+          sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
           Y = sol.u;
           T = sol.t;
         end 

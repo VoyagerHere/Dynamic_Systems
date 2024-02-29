@@ -50,7 +50,6 @@ function eqn!(du, u, p, t)
 end
 
 function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
-    num_of_iterations = length(G_LIST)
     G1 = GStart;
     Threads.@threads for k in eachindex(G_LIST)
       PAR_N = [2, 2];
@@ -59,8 +58,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
       ALPHA = 0
       SPIKE_ERROR =  10
               
-      a = 1000;
-      b = 2000;
+      a = 8000;
+      b = 10000;
 
       for m in eachindex(D_LIST)
         # println("Task started on thread: ", Threads.threadid())
@@ -73,7 +72,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        saveat_points = a:0.001:b
+        sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
         Y = sol.u;
         T = sol.t;
 
@@ -83,7 +83,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, G_LIST, D_LIST)
           y0 = [start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+          saveat_points = a:0.001:b
+          sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
           Y = sol.u;
           T = sol.t;
         end 
