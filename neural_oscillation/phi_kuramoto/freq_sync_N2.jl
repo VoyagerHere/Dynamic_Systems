@@ -181,7 +181,7 @@ end
 
 function DEL_MIDDLE_BURST_INTRVL(n, T)
   if (n > 1)
-    T = sort!(T, alg=InsertionSort);
+    sort(T, rev=true)
     T = T[2:end]
   end
 end
