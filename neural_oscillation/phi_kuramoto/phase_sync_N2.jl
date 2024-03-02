@@ -6,7 +6,6 @@ using Statistics
 using Dates
 
 
-
 const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
@@ -35,7 +34,7 @@ const NUM = 2;
 const PAR_N = [N1, N2];
 const D_MAX =  0.07
 const D_ACCURACY =  0.0001
-const G_NUM = 500
+const G_NUM = 600
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -61,11 +60,9 @@ function eqn!(du, u, p, t)
 end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    num_of_iterations = length(G_LIST)
     G1 = GStart;
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
@@ -78,7 +75,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-
         Y = sol.u;
         T = sol.t;
 
@@ -88,7 +84,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           y0 = [start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
           Y = sol.u;
           T = sol.t;
         end 
@@ -151,7 +147,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
-  global len = [length(SPIKES1), length(SPIKES2)];
+  len = [length(SPIKES1), length(SPIKES2)];
 
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0

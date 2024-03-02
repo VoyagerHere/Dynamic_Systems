@@ -33,6 +33,7 @@ accuracy = 10;
 PythonPlot.matplotlib.rcParams["font.size"] = 14
 size_sc = 4
 
+unique_ratios = sort!(unique_ratios, alg=InsertionSort);
 
 for ratio in unique_ratios
   if (ratio == NaN)

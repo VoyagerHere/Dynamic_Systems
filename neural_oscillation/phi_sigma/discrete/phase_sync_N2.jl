@@ -6,35 +6,30 @@ using Statistics
 using Dates
 
 
-Plots.scalefontsizes()
-Plots.scalefontsizes(1.5)
-
 const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = true;
+const k_DELETE_UNSTABLE = false;
+const k_PRINT_ITERATION = false;
+const k_ADAPTIVE_SOL_POINTS = true;
 
-const DATA_TAKE_ERROR = 0.05;
+const DATA_TAKE_ERROR = 0.25;
 
-global a = 8000;
-global b = 10000;
-
-# For ADAPTIVE_GRID #обрезает берсты
-const init_b = 10000;
+# For ADAPTIVE_GRID
 const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
-const SPIKE_ERROR =  10
+const SPIKE_ERROR =  0
 
-name = "untitled"
+name = "pi_8"
 N1 = 2 
 N2 = 2
 const NUM = 2;
 const K = -500
-global PAR_N = [N1, N2];
+const PAR_N = [N1, N2];
 const D_MAX =  1.5
 const D_ACCURACY =  0.005
 DELTA = 0.001
@@ -69,10 +64,11 @@ function check_condition(y, sigma)
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
-    num_of_iterations = length(sigma_LIST)
-    for k in eachindex(sigma_LIST)
+  Threads.@threads for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
+      a = 8000;
+      b = 10000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
@@ -97,7 +93,24 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
           T = sol.t;
         end 
 
-        DIFF_SP, DIFF_BS, ratio, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+        DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+
+        if (k_ADAPTIVE_SOL_POINTS)
+          accuracy = 0.01;
+          while ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
+            saveat_points = a:accuracy:b
+            sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+            Y = sol.u;
+            T = sol.t;
+            DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+            accuracy = accuracy / 2;
+            if (accuracy < 1e-4)
+              println("ERROR: Too big tolerance")
+            end
+          end
+        end
+
+        b = copy(b_new);
 
         sync = [0, 0]
         if (err == 0)
@@ -108,15 +121,22 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
           end
         end
         
-        
-        DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
-        SYNC[m + (k-1)*D_NUM] = sync;
+        if(err == 3)
+          for i in m:length(D_LIST)
+            @inbounds DATA[i + (k-1)*D_NUM] =  [D_LIST[i], -3, sigma]
+            @inbounds SYNC[i + (k-1)*D_NUM] = sync;
+          end
+          break;
+        end
+
+        @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
+        @inbounds SYNC[m + (k-1)*D_NUM] = sync;
     end
-      println("Iteration $k of $num_of_iterations")
+    k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
     end
 end
 
-function SYNC_PAIR(T, Y, PAR_N, error)
+function SYNC_PAIR(T, Y, PAR_N, error, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
@@ -129,12 +149,14 @@ function SYNC_PAIR(T, Y, PAR_N, error)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
+  len = [length(SPIKES1), length(SPIKES2)];
+
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -err
-      return (DIFF_SP, DIFF_BS, ratio, err)
+      return (DIFF_SP, DIFF_BS, ratio, err, b, len)
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
@@ -142,23 +164,21 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
-  k_ENABLE_ADAPTIVE_GRID && (ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), false))
+  k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b))
   
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err)
+  return (DIFF_SP, DIFF_BS, ratio, err, b, len)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, reset)
-  global b;
-  if (reset == true)
-    b = init_b;
-  else   
-    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
-      b += b_step;
-    end
+function ADAPTIVE_GRID(num_of_bursts, b)
+  if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
+     b = b + b_step;
+     return b;
+  else
+    return b;
   end
 end
 
@@ -298,7 +318,7 @@ function DRAW(T, Y, gamma1, gamma2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
+@time  PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

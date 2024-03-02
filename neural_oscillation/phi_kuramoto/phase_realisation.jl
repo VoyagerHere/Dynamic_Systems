@@ -21,8 +21,8 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
   i = 10;
   while i < len
-      global rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      global rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
+      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
+      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
       if ((rel_change_1 < tol) && (rel_change_2 < tol))
           return i
       end

@@ -12,24 +12,28 @@ const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
+const k_PRINT_ITERATION = false;
+const k_ADAPTIVE_SOL_POINTS = true;
 
-const DATA_TAKE_ERROR = 0.05;
+const DATA_TAKE_ERROR = 0.25;
 
+# For ADAPTIVE_GRID
+const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
-const SPIKE_ERROR =  10
+
+# For DELETE_UNSTABLE
+const SPIKE_ERROR =  0
 
 name = "pi_8"
 N1 = 3;
 N2 = 3;
 N3 = 3;
+const ALPHA = pi/8
 const NUM = 3;
-const ALPHA = 0
-
-
-global PAR_N = [N1, N2, N3];
+const PAR_N = [N1, N2, N3];
 const D_MAX =  0.02
 const D_ACCURACY =  0.0001
-const G_NUM = 500
+const G_NUM = 600
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
@@ -71,29 +75,30 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        saveat_points = a:0.001:b
-        sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
         Y = sol.u;
         T = sol.t;
+
         if (k_DELETE_TRANSIENT)
           index = DELETE_TRANSIENT(Y)
           start = T[index];
           y0 = [start, start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          saveat_points = a:0.001:b
-          sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
           Y = sol.u;
           T = sol.t;
         end 
 
-        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
-        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
+        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
         b = max(b1, b2);
         err = vcat(err_12, err_23);
         deleteat!(err, 2); # remove double record of second neuron
 
         sync = zeros(NUM * 2);
+        delta = G2 - G1
+
         if (sum(err_12) == 0)
           sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR);
@@ -106,11 +111,18 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR);
           sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR);
         end
+        if(sum(err) == 3)
+          for i in m:length(D_LIST)
+            @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, -1, -1, delta]
+            @inbounds SYNC[m + (k-1)*D_NUM] = sync;
+            @inbounds DEATH[m + (k-1)*D_NUM] = err;
+          end
+          break;
+        end
 
-        delta = G2 - G1
-        DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
-        SYNC[m + (k-1)*D_NUM] = sync;
-        DEATH[m + (k-1)*D_NUM] = err;
+        @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
+        @inbounds SYNC[m + (k-1)*D_NUM] = sync;
+        @inbounds DEATH[m + (k-1)*D_NUM] = err;
       end
     end
 end
@@ -153,13 +165,12 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
-    b_step = 3000
-    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
-      b_ret = b + b_step;
-      return b_ret;
-    else
-      return b;
-    end
+  if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
+     b = b + b_step;
+     return b;
+  else
+    return b;
+  end
 end
 
 function FIND_SPIKES(Y, n)
@@ -288,7 +299,7 @@ function DRAW(T, Y, G1, G2, G3, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+@time PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
