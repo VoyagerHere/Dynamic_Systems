@@ -15,7 +15,7 @@ const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
-const DATA_TAKE_ERROR = 0.05;
+const DATA_TAKE_ERROR = 0.1;
 
 # For ADAPTIVE_GRID
 const b_step = 3000;
@@ -24,10 +24,10 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__2_2"
-N1 = 2
-N2 = 2
-const ALPHA = pi/8
+name = "title"
+N1 = 0
+N2 = 0
+const ALPHA = 0
 
 
 const NUM = 2;
@@ -76,8 +76,11 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-        saveat_points = a:0.01:b
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+
+        # saveat_points = a:0.01:b
+        # sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+
         Y = sol.u;
         T = sol.t;
 
@@ -87,7 +90,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           y0 = [start, start]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
-          saveat_points = a:0.01:b
           sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
           Y = sol.u;
           T = sol.t;

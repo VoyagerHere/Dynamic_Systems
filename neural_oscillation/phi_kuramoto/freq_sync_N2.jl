@@ -16,10 +16,10 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 
-const DATA_TAKE_ERROR = 0.05;
+const DATA_TAKE_ERROR = 0.1;
 
 global a = 8000;
-global b = 9000;
+global b = 10500;
 
 # For ADAPTIVE_GRID
 const init_b = 9000;
@@ -70,7 +70,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
   num_of_iterations = length(D_LIST)
   k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
   for m in eachindex(D_LIST)
-    global D = D_LIST[m]
+    D = D_LIST[m]
     
     tspan = (a, b)
     
@@ -78,10 +78,9 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     y0 = [0; 0]
 
     prob = ODEProblem(eqn!, y0, tspan, p)
-    saveat_points = a:0.01:b
-    sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-    global Y = sol.u;
-    global T = sol.t;
+    sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+    Y = sol.u;
+    T = sol.t;
 
     if (k_DELETE_TRANSIENT)
       index = DELETE_TRANSIENT(Y)
@@ -112,7 +111,7 @@ end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
