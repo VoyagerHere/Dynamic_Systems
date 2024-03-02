@@ -78,8 +78,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     y0 = [0; 0]
 
     prob = ODEProblem(eqn!, y0, tspan, p)
-    saveat_points = a:0.001:b
-    sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
+    saveat_points = a:0.01:b
+    sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
     global Y = sol.u;
     global T = sol.t;
 
@@ -89,7 +89,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
       y0 = [start, start]
 
       prob = ODEProblem(eqn!, y0, tspan, p)
-      sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14)
+      sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
       Y = sol.u;
       T = sol.t;
     end
@@ -112,7 +112,7 @@ end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
