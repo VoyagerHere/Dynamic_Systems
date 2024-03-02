@@ -13,6 +13,7 @@ const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
+const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.05;
 
@@ -94,7 +95,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
 
         DIFF_SP, DIFF_BS, ratio, err, b_new = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
         b = copy(b_new);
-        display(b)
 
         delta = G2 - G1
         sync = [0, 0]
@@ -118,10 +118,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         
         @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
-        println("d Iteration")
-
     end
-      println("Iteration $k of $num_of_iterations")
+    k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
     end
 end
 
@@ -306,7 +304,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+@time PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
