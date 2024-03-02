@@ -15,6 +15,7 @@ const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
+const k_ADAPTIVE_SOL_POINTS = true;
 
 const DATA_TAKE_ERROR = 0.25;
 
@@ -31,8 +32,8 @@ const SPIKE_ERROR =  0
 
 name = "pi_8__2_2"
 const ALPHA = pi / 8
-N1 = 5
-N2 = 5
+N1 = 3
+N2 = 3
 
 const NUM = 2;
 global PAR_N = [N1, N2];
@@ -79,8 +80,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
 
     prob = ODEProblem(eqn!, y0, tspan, p)
     sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-    global Y = sol.u;
-    global T = sol.t;
+    Y = sol.u;
+    T = sol.t;
 
     if (k_DELETE_TRANSIENT)
       index = DELETE_TRANSIENT(Y)
@@ -93,7 +94,24 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
       T = sol.t;
     end
 
-    w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+    w_s, w_b, err, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+    
+    if (k_ADAPTIVE_SOL_POINTS)
+      accuracy = 0.01;
+      while ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
+        saveat_points = a:accuracy:b
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+        Y = sol.u;
+        T = sol.t;
+        w_s, w_b, err, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
+        accuracy = accuracy / 2;
+        if (accuracy < 1e-4)
+          println("ERROR: Too big tolerance")
+          return
+        end
+      end
+    end
+
     ratio_s = w_s[1] / w_s[2];
     ratio_b = w_b[1] / w_b[2];
 
@@ -105,14 +123,15 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     DATA[m] = [D, ratio_s, ratio_b]
     W[m] = vcat(w_s, w_b)
     println("Iteration $m of $num_of_iterations")
-    return;
   end
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+
+  len = [length(SPIKES1), length(SPIKES2)]
 
   if (k_DELETE_UNSTABLE)
     unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
@@ -148,7 +167,7 @@ function SYNC_PAIR(T, Y, PAR_N, error)
   ws_1 = 2*pi./avg(Times_SP_1);
   ws_2 = 2*pi./avg(Times_SP_2);
 
-  return ([ws_1, ws_2], [wb_1, wb_2], err)
+  return ([ws_1, ws_2], [wb_1, wb_2], err, len)
 end
 
 avg(x) = (ones(length(x)) / length(x))'*x

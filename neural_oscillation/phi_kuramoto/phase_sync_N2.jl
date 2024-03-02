@@ -63,7 +63,7 @@ end
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
-    for k in eachindex(G_LIST)
+    Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       a = 8000;
@@ -96,12 +96,17 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
         
         if (k_ADAPTIVE_SOL_POINTS)
-          if ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
-            saveat_points = a:0.01:b
+          accuracy = 0.01;
+          while ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
+            saveat_points = a:accuracy:b
             sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
             Y = sol.u;
             T = sol.t;
             DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+            accuracy = accuracy / 2;
+            if (accuracy < 1e-4)
+              println("ERROR: Too big tolerance")
+            end
           end
         end
 
@@ -126,7 +131,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           break;
         end
           
-        
         @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
     end
