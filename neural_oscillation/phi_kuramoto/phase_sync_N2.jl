@@ -14,8 +14,9 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
+const k_ADAPTIVE_SOL_POINTS = true;
 
-const DATA_TAKE_ERROR = 0.1;
+const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
 const b_step = 3000;
@@ -24,10 +25,10 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "title"
-N1 = 0
-N2 = 0
-const ALPHA = 0
+name = "pi_8"
+N1 = 2
+N2 = 2
+const ALPHA = pi/8
 
 
 const NUM = 2;
@@ -62,7 +63,7 @@ end
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     num_of_iterations = length(G_LIST)
     G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
+    for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       a = 8000;
@@ -76,9 +77,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
-
-        # saveat_points = a:0.01:b
-        # sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
 
         Y = sol.u;
@@ -95,7 +93,18 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           T = sol.t;
         end 
 
-        DIFF_SP, DIFF_BS, ratio, err, b_new = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+        DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+        
+        if (k_ADAPTIVE_SOL_POINTS)
+          if ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
+            saveat_points = a:0.01:b
+            sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+            Y = sol.u;
+            T = sol.t;
+            DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+          end
+        end
+
         b = copy(b_new);
 
         delta = G2 - G1
@@ -138,12 +147,14 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
     SPIKES2 = SPIKES2[unstbl_2:end];
   end
 
+  global len = [length(SPIKES1), length(SPIKES2)];
+
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -err
-      return (DIFF_SP, DIFF_BS, ratio, err, b)
+      return (DIFF_SP, DIFF_BS, ratio, err, b, len)
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
@@ -158,7 +169,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err, b)
+  return (DIFF_SP, DIFF_BS, ratio, err, b, len)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)

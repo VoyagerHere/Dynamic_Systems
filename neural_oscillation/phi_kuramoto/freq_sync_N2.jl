@@ -16,10 +16,10 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 
-const DATA_TAKE_ERROR = 0.1;
+const DATA_TAKE_ERROR = 0.25;
 
 global a = 8000;
-global b = 10500;
+global b = 9000;
 
 # For ADAPTIVE_GRID
 const init_b = 9000;
@@ -31,8 +31,8 @@ const SPIKE_ERROR =  0
 
 name = "pi_8__2_2"
 const ALPHA = pi / 8
-N1 = 2
-N2 = 2
+N1 = 5
+N2 = 5
 
 const NUM = 2;
 global PAR_N = [N1, N2];
@@ -79,8 +79,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
 
     prob = ODEProblem(eqn!, y0, tspan, p)
     sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-    Y = sol.u;
-    T = sol.t;
+    global Y = sol.u;
+    global T = sol.t;
 
     if (k_DELETE_TRANSIENT)
       index = DELETE_TRANSIENT(Y)
@@ -111,7 +111,7 @@ end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   if (k_DELETE_UNSTABLE)
