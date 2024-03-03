@@ -24,11 +24,12 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8"
-N1 = 3;
-N2 = 3;
-N3 = 3;
+name = "pi_8__2_2_2"
+N1 = 2;
+N2 = 2;
+N3 = 2;
 const ALPHA = pi/8
+
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
 const D_MAX =  0.02
@@ -60,7 +61,7 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
+    for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
       a = 10000;
@@ -123,7 +124,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
             accuracy = accuracy / coef;
             step = step / coef;          
             if (accuracy < 1e-3)
-              println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
+              # println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
               break;
             end
           end
@@ -176,7 +177,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -1
-      return (DIFF_SP, DIFF_BS, ratio, err, b)
+      return (DIFF_SP, DIFF_BS, ratio, err, b, [div(length(SPIKES1), PAR_N[ind1]),div(length(SPIKES2), PAR_N[ind2])])
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
@@ -185,13 +186,15 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
+  len = [length(BURSTS1), length(BURSTS2)]
+
   k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b))
 
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err, b)
+  return (DIFF_SP, DIFF_BS, ratio, err, b, len)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
