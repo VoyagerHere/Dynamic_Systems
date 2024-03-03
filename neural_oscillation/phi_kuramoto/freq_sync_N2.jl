@@ -19,11 +19,11 @@ const k_ADAPTIVE_SOL_POINTS = true;
 
 const DATA_TAKE_ERROR = 0.25;
 
-global a = 8000;
-global b = 9000;
+global a = 8500;
+global b = 12500;
 
 # For ADAPTIVE_GRID
-const init_b = 9000;
+const init_b = 12500;
 const b_step = 3000;
 
 const ADAPTIVE_SET_ERROR = 10;
@@ -32,8 +32,8 @@ const SPIKE_ERROR =  0
 
 name = "pi_8__2_2"
 const ALPHA = pi / 8
-N1 = 3
-N2 = 3
+N1 = 2
+N2 = 2
 
 const NUM = 2;
 global PAR_N = [N1, N2];
@@ -71,7 +71,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
   num_of_iterations = length(D_LIST)
   k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
   for m in eachindex(D_LIST)
-    D = D_LIST[m]
+    global D = 0.0255
     
     tspan = (a, b)
     
@@ -80,8 +80,8 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
 
     prob = ODEProblem(eqn!, y0, tspan, p)
     sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-    Y = sol.u;
-    T = sol.t;
+    global Y = sol.u;
+    global T = sol.t;
 
     if (k_DELETE_TRANSIENT)
       index = DELETE_TRANSIENT(Y)
@@ -97,17 +97,28 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     w_s, w_b, err, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
     
     if (k_ADAPTIVE_SOL_POINTS)
+      k_ADAPTIVE_TOL = false
       accuracy = 0.01;
-      while ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
-        saveat_points = a:accuracy:b
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-        Y = sol.u;
-        T = sol.t;
+      step = 2000;
+      coef = 2;
+      while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0)))
+        if (k_ADAPTIVE_TOL)
+          saveat_points = a:accuracy:b+step
+          prob = ODEProblem(eqn!, y0, (a, b+step), p)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+        else
+          prob = ODEProblem(eqn!, y0, (a, b+step), p)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        end
+        global Y = sol.u;
+        global T = sol.t;
         w_s, w_b, err, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR)
-        accuracy = accuracy / 2;
-        if (accuracy < 1e-4)
-          println("ERROR: Too big tolerance")
-          return
+
+        accuracy = accuracy / coef;
+        step = step / coef;          
+        if (accuracy < 1e-3)
+          println("ERROR: Too big tolerance in D:$D, G1:$G1, G2:$G2, len:$len")
+          break;
         end
       end
     end
@@ -123,13 +134,14 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
     DATA[m] = [D, ratio_s, ratio_b]
     W[m] = vcat(w_s, w_b)
     println("Iteration $m of $num_of_iterations")
+    # return
   end
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error)
   Y = reduce(vcat,transpose.(Y))
-  SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
-  SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
+  global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
+  global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
   len = [length(SPIKES1), length(SPIKES2)]
 

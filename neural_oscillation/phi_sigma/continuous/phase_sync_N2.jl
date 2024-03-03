@@ -24,7 +24,7 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8"
+name = "pi_8__2_2"
 N1 = 2 
 N2 = 2
 const NUM = 2;
@@ -86,23 +86,33 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
 
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
-        if (k_ADAPTIVE_SOL_POINTS)
+        if (k_ADAPTIVE_SOL_POINTS && (err == 0))
+          k_ADAPTIVE_TOL = false
           accuracy = 0.01;
-          while ((len[1] % PAR_N[1]) != 0 && (len[2] % PAR_N[2] != 0))
-            saveat_points = a:accuracy:b
-            sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+          step = 2000;
+          coef = 3/2;
+          while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0)))
+            if (k_ADAPTIVE_TOL)
+              saveat_points = a:accuracy:b+step
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+            else
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+            end
             Y = sol.u;
             T = sol.t;
-            DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
-            accuracy = accuracy / 2;
-            if (accuracy < 1e-4)
-              println("ERROR: Too big tolerance")
+            DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)    
+            accuracy = accuracy / coef;
+            step = step / coef;
+            if (accuracy < 1e-3)
+              println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
+              break;
             end
           end
         end
 
         b = copy(b_new);
-
         sync = [0, 0]
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
@@ -152,6 +162,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
+
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 

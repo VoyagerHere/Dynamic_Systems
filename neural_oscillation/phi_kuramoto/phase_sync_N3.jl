@@ -94,10 +94,40 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
         b = max(b1, b2);
         err = vcat(err_12, err_23);
-        deleteat!(err, 2); # remove double record of second neuron
+        deleteat!(err, 2);
+
+        len = vcat(len_1_2, len_2_3);
+        deleteat!(len, 2);
 
         sync = zeros(NUM * 2);
         delta = G2 - G1
+
+        if (k_ADAPTIVE_SOL_POINTS && (sum(err) != 3))
+          k_ADAPTIVE_TOL = false
+          accuracy = 0.01;
+          step = 2000;
+          coef = 3/2;
+          while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0))|| ((len[3] % PAR_N[3] != 0)))
+            if (k_ADAPTIVE_TOL)
+              saveat_points = a:accuracy:b+step
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+            else
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+            end
+            Y = sol.u;
+            T = sol.t;
+            DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+            DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)  
+            accuracy = accuracy / coef;
+            step = step / coef;          
+            if (accuracy < 1e-3)
+              println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
+              break;
+            end
+          end
+        end
 
         if (sum(err_12) == 0)
           sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR);
