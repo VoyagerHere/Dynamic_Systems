@@ -5,16 +5,17 @@ using LaTeXStrings
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-function eqn!(du, u, p, t)
+const k_DELETE_TRANSIENT = false; 
+
+
+function eqn!(dy, y, p, t)
   d, alpha, g, n, dim_size = p
-  f = g .- sin.(u ./ n)
+  f = g .- sin.(y ./ n)
   exch = zeros(dim_size)
-  for i in 1:dim_size
-    for j in 1:dim_size-1
-      exch[i] += d[j] * sin(u[j] - u[i] - alpha)
-    end
-  end
-  du .= f + exch
+  d1 = d[1]
+  d2 = d[2]
+  exch = [d1 * sin(y[2] - y[1] - alpha) + d2 * sin(y[3] - y[1] - alpha); d1 * sin(y[1] - y[2] - alpha) + d2 * sin(y[3] - y[2] - alpha); d1 * sin(y[1] - y[3] - alpha) + d2 * sin(y[2] - y[3] - alpha)];
+  dy .= f + exch
 end
 
 function DELETE_TRANSIENT(Y, tol=0.002)
@@ -31,35 +32,34 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   return 1
 end
 
-n = [2, 2];
-d = [0.00]
+n = [2, 2, 2];
+d = [0, 0]
 delta = 0.01;
 num = length(n);
 g_init = 1.01;
 alpha = pi/8;
 tspan = (8000, 8500)
 
-y0 = [0, 0]
+y0 = [0, 0, 0]
 
 g = [g_init + delta * i for i in  0:(num -  1)];
-g = [1.01, 1.02]
+g = [1.01, 1.02, 1.03]
 prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
-saveat_points = a:0.001:b
-sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
+sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14)
 
 T = sol.t
 Y = sol.u;
 
-index = DELETE_TRANSIENT(Y)
-start = T[index];
-y0 = [start, start]
+if (k_DELETE_TRANSIENT)
+  index = DELETE_TRANSIENT(Y)
+  start = T[index];
+  y0 = [start, start, start]
 
-prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
-saveat_points = a:0.001:b
-sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14, saveat=saveat_points)
-Y = sol.u;
-T = sol.t;
-
+  prob = ODEProblem(eqn!, y0, tspan, (d, alpha, g, n, num))
+  sol = solve(prob, Tsit5(), reltol=1e-14, abstol=1e-14)
+  Y = sol.u;
+  T = sol.t;
+end
 Y = [mod.(y, 2 * pi) for y in Y]
 
 n1 = n[1]; g1 = g[1];
