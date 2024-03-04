@@ -24,11 +24,12 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8"
-N1 = 3;
-N2 = 3;
-N3 = 3;
+name = "pi_8__2_2_2"
+N1 = 2;
+N2 = 2;
+N3 = 2;
 const ALPHA = pi/8
+
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
 const D_MAX =  0.02
@@ -60,7 +61,7 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
+    for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
       a = 10000;
@@ -94,10 +95,40 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
         b = max(b1, b2);
         err = vcat(err_12, err_23);
-        deleteat!(err, 2); # remove double record of second neuron
+        deleteat!(err, 2);
+
+        len = vcat(len_1_2, len_2_3);
+        deleteat!(len, 2);
 
         sync = zeros(NUM * 2);
         delta = G2 - G1
+
+        if (k_ADAPTIVE_SOL_POINTS && (sum(err) != 3))
+          k_ADAPTIVE_TOL = false
+          accuracy = 0.01;
+          step = 2000;
+          coef = 3/2;
+          while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0))|| ((len[3] % PAR_N[3] != 0)))
+            if (k_ADAPTIVE_TOL)
+              saveat_points = a:accuracy:b+step
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
+            else
+              prob = ODEProblem(eqn!, y0, (a, b+step), p)
+              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+            end
+            Y = sol.u;
+            T = sol.t;
+            DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+            DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)  
+            accuracy = accuracy / coef;
+            step = step / coef;          
+            if (accuracy < 1e-3)
+              # println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
+              break;
+            end
+          end
+        end
 
         if (sum(err_12) == 0)
           sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR);
@@ -146,7 +177,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
       DIFF_SP = 0
       DIFF_BS = 0
       ratio = -1
-      return (DIFF_SP, DIFF_BS, ratio, err, b)
+      return (DIFF_SP, DIFF_BS, ratio, err, b, [div(length(SPIKES1), PAR_N[ind1]),div(length(SPIKES2), PAR_N[ind2])])
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[ind1])
@@ -155,13 +186,15 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
+  len = [length(BURSTS1), length(BURSTS2)]
+
   k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b))
 
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
   DIFF_BS = FIND_DIFF(BURSTS1, BURSTS2, T)
-  return (DIFF_SP, DIFF_BS, ratio, err, b)
+  return (DIFF_SP, DIFF_BS, ratio, err, b, len)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
