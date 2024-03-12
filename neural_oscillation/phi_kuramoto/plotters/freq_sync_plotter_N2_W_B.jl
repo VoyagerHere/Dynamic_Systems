@@ -21,8 +21,8 @@ N2 = 2;
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
 D_VEC = DATA[:,1]
-RATIO_S = DATA[:,2]
-RATIO_B = DATA[:,2]
+# RATIO_S = DATA[:,2]
+RATIO_B = DATA[:,3]
 
 # RATIO_B = round.(RATIO_B; digits = 3);
 

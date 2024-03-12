@@ -7,22 +7,22 @@ using Plots
 gr()
 
 
-# Plots.scalefontsizes()
-# Plots.scalefontsizes(1.5)
+Plots.scalefontsizes()
+Plots.scalefontsizes(1.5)
 
 const NUM_OF_COMPUTE_RES = 4;
 G1 = 1.01;
 G2 = G1 + 0.005;
 alpha_txt = "π/8"
-N1 = 3;
-N2 = 3;
-@load "pi_8__3_3__20240229_1631.jld2" DATA
+N1 = 2;
+N2 = 2;
+@load "pi_8__2_2__20240309_1302.jld2" DATA
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
 D_VEC = DATA[:,1]
 RATIO_S = DATA[:,2]
-RATIO_B = DATA[:,2]
+# RATIO_B = DATA[:,3]
 
 # RATIO_B = round.(RATIO_B; digits = 3);
 
