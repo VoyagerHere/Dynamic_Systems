@@ -6,18 +6,14 @@ using Statistics
 using Dates
 
 
-
-const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
-const k_DELETE_UNSTABLE = false;
-const k_ADAPTIVE_SOL_POINTS = true;
 
 
-const k_DEBUG_PRINT = true
-const k_PRINT_ITERATION = false;
-const k_PRINT_ERROR = true;
+const k_DEBUG_PRINT = true;
+const k_PRINT_ITERATION = true;
+const k_PRINT_ERROR = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
@@ -31,32 +27,25 @@ N2 = 3
 N3 = 3
 
 
-const b_init = 9000;
-const b_step = 1000;
-
-
 const NUM = 3;
 global PAR_N = [N1, N2, N3];
 const D_MAX =  0.05
 const D_ACCURACY =  0.00001
 const SYNC_ERROR =  0.05
 const GStart =  1.01
-const DELTA =  0.025
-
-
-D_LIST = 0:D_ACCURACY:D_MAX
-D_NUM = length(D_LIST)
+const DELTA =  0.005
 
 G1 = 1.01;
 G2 = G1 + DELTA;
 G3 = G2 + DELTA;
 
+D_LIST = 0:D_ACCURACY:D_MAX
+D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 6;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:D_NUM]
 W = [zeros(4) for _ in 1:D_NUM]
 DEATH = [zeros(NUM) for _ in 1:(D_NUM)]
-
 
 
 function eqn!(du, u, p, t)
@@ -71,13 +60,11 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
+function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
-  k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
-  death_state = [0, 0, 0]
 
   a = 8000;
-  b = b_init;
+  b = 10000;
 
   for m in eachindex(D_LIST)
     global d1 = D_LIST[m]
@@ -103,62 +90,11 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
       T = sol.t;
     end
 
-    w_s_1_2, w_b_1_2, err_1, len_1_2, b_1 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, b)
-    w_s_2_3, w_b_2_3, err_2, len_2_3, b_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, b)
-    b = max(b_1, b_2);
+    w_s_1_2, w_b_1_2, err_1 = SYNC_PAIR(T, Y, PAR_N, 1)
+    w_s_2_3, w_b_2_3, err_2 = SYNC_PAIR(T, Y, PAR_N, 2)
 
-    len = vcat(len_1_2, len_2_3);
-    deleteat!(len, 2);
     global err = vcat(err_1, err_2)
     deleteat!(err, 2)
-
-    if ((sum(err) > 0))
-      for i in eachindex(err)
-        if((err[i] == 1) && (death_state[i] == 0))
-          b = b_init;
-          death_state[i] = 1;
-          k_DEBUG_PRINT && println("Neuron - ", i, " DEAD")
-        end
-      end
-    end
-
-
-    
-    if (k_ADAPTIVE_SOL_POINTS && (sum(err) != 3))
-      k_ADAPTIVE_TOL = false
-      accuracy = 0.01;
-      step = 500;
-      coef = 3/2;
-      while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0))|| ((len[3] % PAR_N[3] != 0)))
-        if (k_ADAPTIVE_TOL)
-          saveat_points = a:accuracy:b+step
-          prob = ODEProblem(eqn!, y0, (a, b+step), p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-        else
-          prob = ODEProblem(eqn!, y0, (a, b+step), p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-        end
-        global Y = sol.u;
-        global T = sol.t;
-
-        w_s_1_2, w_b_1_2, err_1, len_1_2, b_1 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, b)
-        w_s_2_3, w_b_2_3, err_2, len_2_3, b_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, b)
-        b = max(b_1, b_2);
-    
-        len = vcat(len_1_2, len_2_3);
-        deleteat!(len, 2);
-        err = vcat(err_1, err_2)
-        deleteat!(err, 2)
-
-        accuracy = accuracy / coef;
-        step = step / coef;          
-        if (accuracy < 1e-3)
-          k_PRINT_ERROR && println("ERROR: Too big tolerance in D1:$d1, D2:$d2, G1:$G1, G2:$G2, len:$len")
-          break;
-        end
-      end
-    end
-    
 
     if (sum(err) == 3)
       @inbounds DATA[m] = [d1, d2, -1, -1, -1, -1]
@@ -179,22 +115,12 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
   end
 end
 
-function SYNC_PAIR(T, Y, PAR_N, error, ind, b)
+function SYNC_PAIR(T, Y, PAR_N, ind)
   Y = reduce(vcat,transpose.(Y))
   global SPIKES1, err1 = FIND_SPIKES(Y[:,ind], PAR_N[ind])
   global SPIKES2, err2 = FIND_SPIKES(Y[:,ind+1], PAR_N[ind+1])
 
   len = [length(SPIKES1), length(SPIKES2)]
-
-  if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[ind], error)
-    unstbl_2 = DELETE_UNSTBL(SPIKES1, err2, PAR_N[ind+1], error)
-
-    untsbl_ind = max(unstbl_1, unstbl_2)
-
-    SPIKES1 = SPIKES1[untsbl_ind:end];
-    SPIKES2 = SPIKES2[untsbl_ind:end];
-  end
 
   k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
   k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
@@ -202,10 +128,8 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind, b)
   err = [err1, err2];
 
   if sum(err) > 0 
-    return ([0, 0], [0, 0], err, len, b)
+    return ([0, 0], [0, 0], err)
   end
-
-  k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(SPIKES1), length(SPIKES1)]), b))
 
   Times_1 = FIND_TIMES(SPIKES1, T, PAR_N);
   Times_2 = FIND_TIMES(SPIKES2, T, PAR_N);
@@ -221,7 +145,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind, b)
   ws_1 = 2*pi./avg(Times_SP_1);
   ws_2 = 2*pi./avg(Times_SP_2);
 
-  return ([ws_1, ws_2], [wb_1, wb_2], err, len, b)
+  return ([ws_1, ws_2], [wb_1, wb_2], err, len)
 end
 
 avg(x) = (ones(length(x)) / length(x))'*x
@@ -236,13 +160,6 @@ function FIND_SPIKES(Y, n)
     err = 0;
   end
   return (SPIKES, err)
-end
-
-function ADAPTIVE_GRID(num_of_bursts, b)
-  if (num_of_bursts < ADAPTIVE_SET_ERROR)
-    b = b +  b_step;
-  end
-  return b;
 end
 
 function FIND_TIMES(SPIKES, T, NUM)
@@ -274,27 +191,6 @@ function handle_errors(err1::Bool, err2::Bool)
   else
       return  0
   end
-end
-
-
-function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
-  UNSTBL = 1
-  if err > 0
-      return UNSTBL
-  end
-  B = zeros(Int64, div(length(SPIKES), n))
-  for m in n:n:length(SPIKES)
-    B[div(m, n)] = SPIKES[m]
-  end
-  if length(B) < 2*unstable_err
-    return UNSTBL
-  end
-  element = B[unstable_err]
-  UNSTBL = findall(SPIKES .== element)
-  if isempty(UNSTBL)
-      UNSTBL = 1
-  end
-  return UNSTBL[1]
 end
 
 function DELETE_TRANSIENT(Y, tol=0.002)
@@ -348,11 +244,11 @@ function DRAW(T, Y, G1, G2, G3, D, PAR_N)
   xlabel!(L"t")
   ylabel!(L"\varphi")
 end
-FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
+FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA);
 
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");
   filename ="$name$times.jld2"
-  @save filename DATA W
+  @save filename DATA W DEATH
 end

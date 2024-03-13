@@ -6,33 +6,23 @@ using Statistics
 using Dates
 
 
-const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
-const k_ADAPTIVE_SOL_POINTS = true;
 
 const DATA_TAKE_ERROR = 0.25;
 
-# For ADAPTIVE_GRID
-const b_step = 1000;
-const ADAPTIVE_SET_ERROR = 10;
-# For DELETE_UNSTABLE
-
-const SPIKE_ERROR =  0
-
-
-name = "pi_2_3__3_3"
-const ALPHA = 2*pi / 3
-N1 = 3
-N2 = 3
+name = "pi_8__1_1"
+const ALPHA = pi / 8
+N1 = 1
+N2 = 1
 
 const NUM = 2;
 global PAR_N = [N1, N2];
-const D_MAX =  0.04
+const D_MAX =  0.03
 const D_ACCURACY =  0.00001
 const SYNC_ERROR =  0.05
 const GStart =  1.01
@@ -58,10 +48,10 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
+function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
-  b = 9000;
+  b = 10000;
 
   for m in eachindex(D_LIST)    
     tspan = (a, b)
@@ -87,36 +77,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
       T = sol.t;
     end
 
-    w_s, w_b, err, len, b_new = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
-    
-    if (k_ADAPTIVE_SOL_POINTS && (err == 0))
-      k_ADAPTIVE_TOL = false
-      accuracy = 0.01;
-      step = 2000;
-      coef = 3/2;
-      while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0)))
-        if (k_ADAPTIVE_TOL)
-          saveat_points = a:accuracy:b+step
-          prob = ODEProblem(eqn!, y0, (a, b+step), p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-        else
-          prob = ODEProblem(eqn!, y0, (a, b+step), p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-        end
-        global Y = sol.u;
-        global T = sol.t;
-        w_s, w_b, err, len, b_new = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
-
-        accuracy = accuracy / coef;
-        step = step / coef;          
-        if (accuracy < 1e-3)
-          println("ERROR: Too big tolerance in D:$D, G1:$G1, G2:$G2, len:$len")
-          break;
-        end
-      end
-    end
-    b = copy(b_new);
-
+    w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
 
     ratio_s = w_s[1] / w_s[2];
     ratio_b = w_b[1] / w_b[2];
@@ -133,32 +94,18 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA)
   end
 end
 
-function SYNC_PAIR(T, Y, PAR_N, error, b)
+function SYNC_PAIR(T, Y, PAR_N)
   Y = reduce(vcat,transpose.(Y))
   global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
-
-  len = [length(SPIKES1), length(SPIKES2)]
-
-  if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(SPIKES1, err2, PAR_N[2], error)
-
-    untsbl_ind = max(unstbl_1, unstbl_2)
-
-    SPIKES1 = SPIKES1[untsbl_ind:end];
-    SPIKES2 = SPIKES2[untsbl_ind:end];
-  end
 
   k_DEBUG_PRINT && println("Spikes in 1: ", length(SPIKES1))
   k_DEBUG_PRINT && println("Spikes in 2: ", length(SPIKES2))
 
   err = handle_errors(Bool(err1), Bool(err2));
   if err != 0
-      return ([0, 0], [0, 0], err, len, b)
+      return ([0, 0], [0, 0], err)
   end
-
-  k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(SPIKES1), length(SPIKES1)]), b))
 
   Times_1 = FIND_TIMES(SPIKES1, T, PAR_N);
   Times_2 = FIND_TIMES(SPIKES2, T, PAR_N);
@@ -174,7 +121,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
   global ws_1 = 2*pi./avg(Times_SP_1);
   global ws_2 = 2*pi./avg(Times_SP_2);
 
-  return ([ws_1, ws_2], [wb_1, wb_2], err, len, b)
+  return ([ws_1, ws_2], [wb_1, wb_2], err)
 end
 
 avg(x) = (ones(length(x)) / length(x))'*x
@@ -191,14 +138,6 @@ function FIND_SPIKES(Y, n)
   return (SPIKES, err)
 end
 
-function ADAPTIVE_GRID(num_of_bursts, b)
-  if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
-     b = b + b_step;
-     return b;
-  else
-    return b;
-  end
-end
 
 function FIND_TIMES(SPIKES, T, NUM)
   len = maximum(NUM);
@@ -246,25 +185,6 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   return 1
 end
 
-function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
-  UNSTBL = 1
-  if err > 0
-      return UNSTBL
-  end
-  B = zeros(Int64, div(length(SPIKES), n))
-  for m in n:n:length(SPIKES)
-    B[div(m, n)] = SPIKES[m]
-  end
-  if length(B) < 2*unstable_err
-    return UNSTBL
-  end
-  element = B[unstable_err]
-  UNSTBL = findall(SPIKES .== element)
-  if isempty(UNSTBL)
-      UNSTBL = 1
-  end
-  return UNSTBL[1]
-end
 
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
@@ -301,7 +221,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, SPIKE_ERROR, ALPHA);
+FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA);
 
 
 if k_IS_SAVE_DATA 

@@ -13,9 +13,9 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
-const k_ADAPTIVE_SOL_POINTS = true;
 
 const DATA_TAKE_ERROR = 0.25;
+const b_init = 14000
 
 # For ADAPTIVE_GRID
 const b_step = 3000;
@@ -61,11 +61,13 @@ end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     G1 = GStart;
+    death_state = [0, 0, 0]
+
     for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
       a = 10000;
-      b = 14000;
+      b = b_init;
       for m in eachindex(D_LIST)        
         d1 = D_LIST[m]
         d2 = d1;
@@ -103,29 +105,12 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         sync = zeros(NUM * 2);
         delta = G2 - G1
 
-        if (k_ADAPTIVE_SOL_POINTS && (sum(err) != 3))
-          k_ADAPTIVE_TOL = false
-          accuracy = 0.01;
-          step = 2000;
-          coef = 3/2;
-          while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0))|| ((len[3] % PAR_N[3] != 0)))
-            if (k_ADAPTIVE_TOL)
-              saveat_points = a:accuracy:b+step
-              prob = ODEProblem(eqn!, y0, (a, b+step), p)
-              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-            else
-              prob = ODEProblem(eqn!, y0, (a, b+step), p)
-              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-            end
-            Y = sol.u;
-            T = sol.t;
-            DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
-            DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)  
-            accuracy = accuracy / coef;
-            step = step / coef;          
-            if (accuracy < 1e-3)
-              # println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
-              break;
+        if ((sum(err) > 0))
+          for i in eachindex(err)
+            if((err[i] == 1) && (death_state[i] == 0))
+              b = b_init;
+              death_state[i] = 1;
+              k_DEBUG_PRINT && println("Neuron - ", i, " DEAD")
             end
           end
         end
