@@ -15,10 +15,10 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_8__1_1"
+name = "pi_8__2_2"
 const ALPHA = pi / 8
-N1 = 1
-N2 = 1
+N1 = 2
+N2 = 2
 
 const NUM = 2;
 global PAR_N = [N1, N2];
