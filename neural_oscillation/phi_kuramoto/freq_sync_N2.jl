@@ -51,7 +51,7 @@ end
 function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
-  b = 10000;
+  b = 18000;
 
   for m in eachindex(D_LIST)    
     tspan = (a, b)
