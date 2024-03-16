@@ -1,4 +1,4 @@
-#!/usr/bin/env julia
+#!/home/kolesnikov_d julia
 
 # using Distributed, SlurmClusterManager
 # addprocs(SlurmManager())
