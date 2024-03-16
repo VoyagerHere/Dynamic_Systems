@@ -22,7 +22,7 @@ const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
-const SPIKE_ERROR =  0
+const SPIKE_ERROR =  20
 
 name = "pi_8__2_2_2"
 N1 = 2;
