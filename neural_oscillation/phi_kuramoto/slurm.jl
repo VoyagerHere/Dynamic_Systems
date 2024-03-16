@@ -1,4 +1,4 @@
-#!/home/kolesnikov_d julia
+#!/home/kolesnikov_d/julia-1.10.2/bin julia
 
 # using Distributed, SlurmClusterManager
 # addprocs(SlurmManager())
@@ -41,7 +41,7 @@ const NUM = 3;
 const PAR_N = [N1, N2, N3];
 const D_MAX =  0.04
 const D_ACCURACY =  0.0001
-const G_NUM = 600
+const G_NUM = 640
 const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA =  0.025
