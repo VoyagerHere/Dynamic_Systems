@@ -1,10 +1,3 @@
-#!/home/kolesnikov_d/julia-1.10.2/bin julia
-
-# using Distributed, SlurmClusterManager
-# addprocs(SlurmManager())
-# @everywhere println("hello from $(myid()):$(gethostname())")
-
-
 using DifferentialEquations
 using Plots
 using LaTeXStrings
