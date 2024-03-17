@@ -11,7 +11,7 @@ const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_UNSTABLE = true;
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
@@ -22,7 +22,7 @@ const b_step = 3000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
-const SPIKE_ERROR =  0
+const SPIKE_ERROR =  20
 
 name = "pi_8__2_2_2"
 N1 = 2;
@@ -32,7 +32,7 @@ const ALPHA = pi/8
 
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
-const D_MAX =  0.02
+const D_MAX =  0.05
 const D_ACCURACY =  0.0001
 const G_NUM = 600
 const SYNC_ERROR =  0.05
@@ -127,14 +127,6 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR);
           sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR);
         end
-        if(sum(err) == 3)
-          for i in m:length(D_LIST)
-            @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, -1, -1, delta]
-            @inbounds SYNC[m + (k-1)*D_NUM] = sync;
-            @inbounds DEATH[m + (k-1)*D_NUM] = err;
-          end
-          break;
-        end
 
         @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
@@ -213,7 +205,7 @@ end
 
 function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   UNSTBL = 1
-  if err > 0
+  if err == 1
       return UNSTBL
   end
   B = zeros(Int64, div(length(SPIKES), n))
