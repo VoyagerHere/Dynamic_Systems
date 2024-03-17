@@ -63,7 +63,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
     G1 = GStart;
     death_state = [0, 0, 0]
 
-    for k in eachindex(G_LIST)
+    Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k]
       G3 = G2 + DELTA;
       a = 10000;
