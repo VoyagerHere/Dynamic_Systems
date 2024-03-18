@@ -30,11 +30,11 @@ function DELETE_TRANSIENT(Y, tol=0.002)
 end
 
 n = [2, 2];
-d = 3.5
+d = 7.5
 num = length(n);
-alpha = 2*pi/3;
-alpha_txt = "2π/3"
-tspan = (8030, 8055)
+alpha = pi/8;
+alpha_txt = "π/8"
+tspan = (8030, 8130)
 
 y0 = [0, 0]
 
