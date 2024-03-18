@@ -47,17 +47,16 @@ W = [zeros(4) for _ in 1:D_NUM]
 DEATH = [zeros(NUM) for _ in 1:(D_NUM)]
 
 
-function eqn!(du, u, p, t)
+function eqn!(dy, y, p, t)
   d, alpha, g, n, dim_size = p
-  f = g .- sin.(u ./ n)
+  f = g .- sin.(y ./ n)
   exch = zeros(dim_size)
-  for i in 1:dim_size
-    for j in 1:dim_size-1
-      exch[i] += d[j] * sin(u[j] - u[i] - alpha)
-    end
-  end
-  du .= f + exch
+  d1 = d[1]
+  d2 = d[2]
+  exch = [d1 * sin(y[2] - y[1] - alpha) + d2 * sin(y[3] - y[1] - alpha); d1 * sin(y[1] - y[2] - alpha) + d2 * sin(y[3] - y[2] - alpha); d1 * sin(y[1] - y[3] - alpha) + d2 * sin(y[2] - y[3] - alpha)];
+  dy .= f + exch
 end
+
 
 function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)

@@ -7,7 +7,7 @@ using Dates
 
 
 const k_ENABLE_ADAPTIVE_GRID = true;
-const k_DEBUG_PRINT = true
+const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
@@ -17,28 +17,28 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
-const b_step = 1000;
+const b_step = 2000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__2_2"
-N1 = 2
-N2 = 2
-const ALPHA = pi/8
+name = "pi_2_3__3_3"
+N1 = 3
+N2 = 3
+const ALPHA = 2pi/3
 
 
 const NUM = 2;
 const PAR_N = [N1, N2];
-const D_MAX =  7
-const D_ACCURACY =  0.001
-const G_NUM = 600
+const D_MAX =  0.07
+const D_ACCURACY =  0.0001
+const G_NUM = 640
 const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.025
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 5:D_ACCURACY:D_MAX
+D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -47,29 +47,24 @@ SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
 
 
 function eqn!(du, u, p, t)
-  d, alpha, g, n, dim_size = p
+  d, alpha, g, n = p
   f = g .- sin.(u ./ n)
-  exch = zeros(dim_size)
-  for i in 1:dim_size
-    for j in 1:dim_size-1
-      exch[i] += d[j] * sin(u[j] - u[i] - alpha)
-    end
-  end
-  du .= f + exch
+  exch = [d * sin(u[2] - u[1] - alpha), d * sin(u[1] - u[2] - alpha)]
+  du .= f .+ exch
 end
 
-function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
+function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
     G1 = GStart;
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       a = 8000;
-      b = 9000;
+      b = 10000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
         tspan = (a, b)
         
-        p = (d, ALPHA, [G1, G2], PAR_N, NUM);
+        p = (d, ALPHA, [G1, G2], PAR_N);
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
@@ -292,7 +287,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-@time PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+@time PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

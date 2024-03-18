@@ -35,19 +35,15 @@ G2 = G1 + DELTA;
 const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:D_NUM]
 W = [zeros(NUM*2) for _ in 1:D_NUM]
+
 function eqn!(du, u, p, t)
-  d, alpha, g, n, dim_size = p
+  d, alpha, g, n = p
   f = g .- sin.(u ./ n)
-  exch = zeros(dim_size)
-  for i in 1:dim_size
-    for j in 1:dim_size-1
-      exch[i] += d[j] * sin(u[j] - u[i] - alpha)
-    end
-  end
-  du .= f + exch
+  exch = [d * sin(u[2] - u[1] - alpha), d * sin(u[1] - u[2] - alpha)]
+  du .= f .+ exch
 end
 
-function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
+function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
   b = 18000;
@@ -57,7 +53,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
     global D = D_LIST[m]
     # global D = 0.0255
     
-    p = (D, ALPHA, [G1, G2], PAR_N, NUM);
+    p = (D, ALPHA, [G1, G2], PAR_N);
     y0 = [0; 0]
 
     prob = ODEProblem(eqn!, y0, tspan, p)
@@ -220,7 +216,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA);
+FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA);
 
 
 if k_IS_SAVE_DATA 
