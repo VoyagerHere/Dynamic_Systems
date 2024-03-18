@@ -24,10 +24,10 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  20
 
-name = "pi_2_3__2_2_2"
-N1 = 2;
-N2 = 2;
-N3 = 2;
+name = "pi_2_3__3_3_3"
+N1 = 3;
+N2 = 3;
+N3 = 3;
 const ALPHA = 2*pi/3
 
 const NUM = 3;
