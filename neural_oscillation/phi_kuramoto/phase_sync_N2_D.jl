@@ -7,7 +7,7 @@ using Dates
 
 
 const k_ENABLE_ADAPTIVE_GRID = true;
-const k_DEBUG_PRINT = false
+const k_DEBUG_PRINT = true
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
@@ -17,7 +17,7 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
-const b_step = 2000;
+const b_step = 1000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
@@ -31,14 +31,14 @@ const ALPHA = pi/8
 
 const NUM = 2;
 const PAR_N = [N1, N2];
-const D_MAX =  0.07
-const D_ACCURACY =  0.0001
+const D_MAX =  7
+const D_ACCURACY =  0.001
 const G_NUM = 600
 const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.025
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0:D_ACCURACY:D_MAX
+D_LIST = 5:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -63,7 +63,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 9000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         

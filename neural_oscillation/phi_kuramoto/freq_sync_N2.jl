@@ -24,7 +24,6 @@ const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.03
 const D_ACCURACY =  0.00001
-const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA = 0.005;
 D_LIST = 0:D_ACCURACY:D_MAX

@@ -41,28 +41,28 @@ for ratio in unique_ratios
   end 
   ratio_ind = findall(x -> x == ratio, RATIO_VEC)
   if (ratio == 0)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "gray", label=L"$S_{%$counter_field}$: Q-P")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "gray", label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
   elseif (ratio == -1)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "darkgrey", label=L"$S_{%$counter_field}$: D $\varphi_1$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "darkgrey", label=L"$S$%$counter_field: D $\varphi_1$")
     global counter_field += 1;
   elseif (ratio == -2)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "slategrey", label=L"$S_{%$counter_field}$: D $\varphi_2$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "slategrey", label=L"$S$%$counter_field: D $\varphi_2$")
     global counter_field +=1;
   elseif (ratio == -3)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "black", label=L"$S_{%$counter_field}$: D $\varphi_1, \varphi_2$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "black", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
     global counter_field +=1;
   else
     Burst_p = intersect(Burst_Sync, ratio_ind)
     Spike_p = intersect(Spike_Sync, ratio_ind)
     if (length(Spike_p) > accuracy) && (length(Burst_p) > accuracy)
       if (Spike_p == Burst_p) 
-        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S_{%$counter_field}$: SS 1:%$ratio")
+        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       else
-        scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S_{%$counter_field}$: BS  1:%$ratio") 
+        scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS  1:%$ratio") 
         global counter_field+=1
-        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S_{%$counter_field}$: SS 1:%$ratio")
+        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       end
     end
