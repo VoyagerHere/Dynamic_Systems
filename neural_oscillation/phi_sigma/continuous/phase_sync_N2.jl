@@ -13,12 +13,11 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
-const k_ADAPTIVE_SOL_POINTS = true;
 
 const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
-const b_step = 3000;
+const b_step = 2000;
 const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
@@ -35,7 +34,7 @@ const D_ACCURACY =  0.005
 DELTA = 0.001
 const gamma1 = 1.01
 const gamma2 = 1.01+DELTA
-const SYNC_ERROR =  0.05
+const SYNC_ERROR =  0.25;
 const sigma_MAX = pi
 const sigma_ACCURACY =  0.005
 sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
@@ -48,16 +47,15 @@ DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
 function eqn!(du, u, p, t)#u - это тета
-  d, sigma, g, n, dim_size = p
+  d, sigma, g, n = p
   f = g .- sin.(u ./ n)
   exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
   du .= f - d*exch
 end
 
-function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
+function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
     Threads.@threads for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
-      k_ENABLE_ADAPTIVE_GRID && ADAPTIVE_GRID(0, true);
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
@@ -65,7 +63,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
         
         tspan = (a, b)
         
-        p = (d, sigma, [gamma1, gamma2],  PAR_N, NUM);
+        p = (d, sigma, [gamma1, gamma2],  PAR_N);
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
@@ -86,32 +84,6 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
 
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
-        if (k_ADAPTIVE_SOL_POINTS && (err == 0))
-          k_ADAPTIVE_TOL = false
-          accuracy = 0.01;
-          step = 2000;
-          coef = 3/2;
-          while (((len[1] % PAR_N[1]) != 0) || ((len[2] % PAR_N[2] != 0)))
-            if (k_ADAPTIVE_TOL)
-              saveat_points = a:accuracy:b+step
-              prob = ODEProblem(eqn!, y0, (a, b+step), p)
-              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12, saveat=saveat_points)
-            else
-              prob = ODEProblem(eqn!, y0, (a, b+step), p)
-              sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-            end
-            Y = sol.u;
-            T = sol.t;
-            DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)    
-            accuracy = accuracy / coef;
-            step = step / coef;
-            if (accuracy < 1e-3)
-              println("ERROR: Too big tolerance in D:$d, G1:$G1, G2:$G2, len:$len")
-              break;
-            end
-          end
-        end
-
         b = copy(b_new);
         sync = [0, 0]
         if (err == 0)
@@ -120,14 +92,6 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
           if (sum(sync) == 0)
             ratio = 0
           end
-        end
-        
-        if(err == 3)
-          for i in m:length(D_LIST)
-            @inbounds DATA[i + (k-1)*D_NUM] =  [D_LIST[i], -3, sigma]
-            @inbounds SYNC[i + (k-1)*D_NUM] = sync;
-          end
-          break;
         end
 
         @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
@@ -320,7 +284,7 @@ function DRAW(T, Y, gamma1, gamma2, D, PAR_N)
     ylabel!(L"\varphi")
 end
 
-@time  PHASE_SYNC(DATA, SYNC, PAR_N, NUM, sigma_LIST, D_LIST, SPIKE_ERROR)
+@time  PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

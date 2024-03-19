@@ -24,7 +24,6 @@ const NUM = 2;
 global PAR_N = [N1, N2];
 const D_MAX =  0.03
 const D_ACCURACY =  0.00001
-const SYNC_ERROR =  0.05
 const GStart =  1.01
 const DELTA = 0.005;
 D_LIST = 0:D_ACCURACY:D_MAX
@@ -48,17 +47,17 @@ function eqn!(du, u, p, t)
   du .= f + exch
 end
 
-function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
+function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
-  b = 10000;
+  b = 18000;
 
   for m in eachindex(D_LIST)    
     tspan = (a, b)
     global D = D_LIST[m]
     # global D = 0.0255
     
-    p = (D, ALPHA, [G1, G2], PAR_N, NUM);
+    p = (D, ALPHA, [G1, G2], PAR_N);
     y0 = [0; 0]
 
     prob = ODEProblem(eqn!, y0, tspan, p)
@@ -221,7 +220,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA);
+FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA);
 
 
 if k_IS_SAVE_DATA 
