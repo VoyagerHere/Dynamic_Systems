@@ -11,7 +11,7 @@ const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = false;
 
 
-const k_DEBUG_PRINT = true;
+const k_DEBUG_PRINT = false;
 const k_PRINT_ITERATION = true;
 const k_PRINT_ERROR = false;
 

@@ -7,10 +7,10 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "untitiled"
-alpha_txt = "π/8"
-N1 = 3;
-N2 = 3;
+name = "pi_2_3__2_2__20240318_1552"
+alpha_txt = "2π/3"
+N1 = 2;
+N2 = 2;
 
 @load "$name.jld2" DATA SYNC
 
@@ -55,15 +55,19 @@ for ratio in unique_ratios
   else
     Burst_p = intersect(Burst_Sync, ratio_ind)
     Spike_p = intersect(Spike_Sync, ratio_ind)
-    if (length(Spike_p) > accuracy) && (length(Burst_p) > accuracy)
+    if (length(Spike_p) > accuracy) || (length(Burst_p) > accuracy)
       if (Spike_p == Burst_p) 
         scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       else
-        scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS  1:%$ratio") 
-        global counter_field+=1
-        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
-        global counter_field+=1
+        if ((length(Burst_p) > accuracy))
+          scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS  1:%$ratio") 
+          global counter_field+=1
+        end
+        if ((length(Spike_p) > accuracy))
+          scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
+          global counter_field+=1
+        end
       end
     end
   end

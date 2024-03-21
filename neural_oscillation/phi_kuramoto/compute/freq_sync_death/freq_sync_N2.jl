@@ -15,14 +15,14 @@ const k_PRINT_ITERATION = true;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_2_3__2_2"
+name = "pi_2_3__3_3"
 const ALPHA = 2*pi / 3
-N1 = 2
-N2 = 2
+N1 = 3
+N2 = 3
 
 const NUM = 2;
 global PAR_N = [N1, N2];
-const D_MAX = 0.6
+const D_MAX = 0.3
 const D_ACCURACY =  0.0001
 const GStart =  1.01
 const DELTA = 0.005;
