@@ -11,7 +11,7 @@ name = "untitiled"
 N1 = 3;
 N2 = 3;
 
-@load "$name.jld2" DATA SYNC
+@load "discr_2__20240304_1934.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
