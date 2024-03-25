@@ -23,15 +23,14 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__2_2"
-N1 = 2 
-N2 = 2
+name = "pi_8__1_1"
+N1 = 1 
+N2 = 1
 const NUM = 2;
-const K = -500
 const PAR_N = [N1, N2];
 const D_MAX =  1.5
 const D_ACCURACY =  0.005
-DELTA = 0.001
+const DELTA = 0.001
 const gamma1 = 1.01
 const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
@@ -54,7 +53,6 @@ function eqn!(du, u, p, t)
   exch = d*[F2, F1]
   du .= f - exch
 end
-
 
 function check_condition(y, sigma)
   F1 = y[1] > pi/2 - sigma && y[1] < pi/2 + sigma ?  0 :  1

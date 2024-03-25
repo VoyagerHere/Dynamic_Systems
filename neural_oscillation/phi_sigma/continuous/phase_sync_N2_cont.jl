@@ -23,9 +23,10 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__2_2"
-N1 = 2 
-N2 = 2
+name = "pi_8__1_1"
+N1 = 1 
+N2 = 1
+
 const NUM = 2;
 const K = -500
 const PAR_N = [N1, N2];

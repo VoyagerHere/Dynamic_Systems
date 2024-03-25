@@ -15,78 +15,84 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_8__2_2"
-const ALPHA = pi / 8
-N1 = 2
-N2 = 2
+name = "pi_8__1_1"
+N1 = 1 
+N2 = 1
 
 const NUM = 2;
-global PAR_N = [N1, N2];
-const D_MAX =  0.03
-const D_ACCURACY =  0.00001
-const GStart =  1.01
-const DELTA = 0.005;
+const K = -500
+const PAR_N = [N1, N2];
+const D_MAX =  1.5
+const D_ACCURACY =  0.005
+const DELTA = 0.001
+const gamma1 = 1.01
+const gamma2 = 1.01+DELTA
+const SYNC_ERROR =  0.25;
+const sigma_MAX = pi
+const sigma_ACCURACY =  0.005
+sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
+sigma_NUM = length(sigma_LIST)
 
-G1 = 1.01;
-G2 = G1 + DELTA;
+DATA = [zeros(4) for _ in 1:(D_NUM*sigma_NUM)]
+W = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-const NUM_OF_COMPUTE_RES = 3;
-DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:D_NUM]
-W = [zeros(NUM*2) for _ in 1:D_NUM]
-
-function eqn!(du, u, p, t)
-  d, alpha, g, n = p
+function eqn!(du, u, p, t)#u - это тета
+  d, sigma, g, n = p
   f = g .- sin.(u ./ n)
-  exch = [d * sin(u[2] - u[1] - alpha), d * sin(u[1] - u[2] - alpha)]
-  du .= f .+ exch
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  du .= f - d*exch
 end
 
-function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
-  num_of_iterations = length(D_LIST)
-  a = 8000;
-  b = 18000;
+function FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST)
+  Threads.@threads   for k in eachindex(sigma_LIST)
+    # num_of_iterations = D_NUM*sigma_NUM
+    sigma = sigma_LIST[k];
+    a = 8000;
+    b = 18000;
 
-  for m in eachindex(D_LIST)    
-    tspan = (a, b)
-    global D = D_LIST[m]
-    # global D = 0.0255
-    
-    p = (D, ALPHA, [G1, G2], PAR_N);
-    y0 = [0; 0]
+    for m in eachindex(D_LIST)    
+        d = D_LIST[m]
+                
+        tspan = (a, b)
 
-    prob = ODEProblem(eqn!, y0, tspan, p)
-    sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-    global Y = sol.u;
-    global T = sol.t;
+        p = (d, sigma, [gamma1, gamma2],  PAR_N);
+        y0 = [pi/2; pi/2]
 
-    if (k_DELETE_TRANSIENT)
-      index = DELETE_TRANSIENT(Y)
-      start = T[index];
-      y0 = [start, start]
+        prob = ODEProblem(eqn!, y0, tspan, p)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        Y = sol.u;
+        T = sol.t;
 
-      prob = ODEProblem(eqn!, y0, tspan, p)
-      sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-      Y = sol.u;
-      T = sol.t;
+        if (k_DELETE_TRANSIENT)
+          index = DELETE_TRANSIENT(Y)
+          start = T[index];
+          y0 = [start, start]
+
+          prob = ODEProblem(eqn!, y0, tspan, p)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+          Y = sol.u;
+          T = sol.t;
+        end
+
+        w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
+
+        ratio_s = w_s[1] / w_s[2];
+        ratio_b = w_b[1] / w_b[2];
+
+        if (err != 0)
+          DATA[m] = [d, sigma,  -err, -err]
+          continue;
+        end
+
+        
+        DATA[m + (k-1)*D_NUM] = [d, sigma, ratio_s, ratio_b]
+        W[m] = vcat(w_s, w_b)
+        # it = m + (k-1)*D_NUM
+        # println("Iteration $it of $num_of_iterations")
+      end
     end
-
-    w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
-
-    ratio_s = w_s[1] / w_s[2];
-    ratio_b = w_b[1] / w_b[2];
-
-    if (err != 0)
-      DATA[m] = [D, -err, -err]
-      continue;
-    end
-
-    DATA[m] = [D, ratio_s, ratio_b]
-    W[m] = vcat(w_s, w_b)
-    println("Iteration $m of $num_of_iterations")
-    # return
-  end
 end
 
 function SYNC_PAIR(T, Y, PAR_N)
@@ -180,7 +186,6 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   return 1
 end
 
-
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
     while i < length(POINTS)
@@ -204,19 +209,19 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G1, G2, D, PAR_N)
+function DRAW(T, Y, gamma1, gamma2, d, PAR_N)
   Y = [mod.(y, 2 * pi) for y in Y]
   n1 = PAR_N[1];
   n2 = PAR_N[2];
-  plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
-  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
-  title!(L"d = %$D")
+  plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$gamma1")
+  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$gamma2")
+  title!(L"d = %$d")
   ylims!(0,  2*pi)
   xlabel!(L"t")
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA);
+FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST);
 
 
 if k_IS_SAVE_DATA 
