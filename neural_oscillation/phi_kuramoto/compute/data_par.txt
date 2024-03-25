@@ -1,0 +1,25 @@
+
+
+pi/8 
+2, 2
+
+dead end: d = 5.0
+
+
+2pi/3
+2, 2
+dead end: d = 0.8
+need to delete unstable (~4)
+
+
+pi/8
+2, 2, 2
+dead end: d = 2.5
+
+
+2pi/3
+2, 2, 2
+no dead on 
+g1 = 1,01
+g2 = 1.015
+g3 = 1.02

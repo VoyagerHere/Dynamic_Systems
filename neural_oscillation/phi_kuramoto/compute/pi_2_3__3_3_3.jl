@@ -24,15 +24,15 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  20
 
-name = "pi_8__2_2_2"
-N1 = 2;
-N2 = 2;
-N3 = 2;
-const ALPHA = pi/8
+name = "pi_2_3__3_3_3"
+N1 = 3;
+N2 = 3;
+N3 = 3;
+const ALPHA = 2*pi/3
 
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
-const D_MAX =  0.05
+const D_MAX =  0.1
 const D_ACCURACY =  0.0001
 const G_NUM = 640
 const SYNC_ERROR =  0.25

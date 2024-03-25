@@ -7,12 +7,12 @@ using Plots
 gr()
 
 
-alpha_txt = "2π/3"
+alpha_txt = "π/8"
 N1 = 3;
 N2 = 3;
 N3 = 3;
 name = "w_{b}^{1,2}/w_{b}^{1,2}"
-@load "pi_2_3__3_3_3__20240313_1939.jld2" DATA W DEATH
+@load "pi_8__3_3_3__20240319_1439.jld2" DATA W DEATH
  
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -70,7 +70,7 @@ end
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt")
 # ylims!(0,  1)
-xlims!(0,  0.025)
+ xlims!(0.01,  3.0)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"%$name", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 

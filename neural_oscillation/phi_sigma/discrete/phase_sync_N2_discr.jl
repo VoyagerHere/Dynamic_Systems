@@ -24,39 +24,47 @@ const ADAPTIVE_SET_ERROR = 10;
 const SPIKE_ERROR =  0
 
 name = "pi_8__2_2"
-N1 = 2
+N1 = 2 
 N2 = 2
-const ALPHA = pi/8
-
-
 const NUM = 2;
+const K = -500
 const PAR_N = [N1, N2];
-const D_MAX =  0.07
-const D_ACCURACY =  0.0001
-const G_NUM = 640
+const D_MAX =  1.5
+const D_ACCURACY =  0.005
+DELTA = 0.001
+const gamma1 = 1.01
+const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
-const GStart =  1.01
-const DELTA =  0.025
-G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
+const sigma_MAX = pi
+const sigma_ACCURACY =  0.005
+sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
+sigma_NUM = length(sigma_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
-DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*G_NUM)]
-SYNC = [zeros(2) for _ in 1:(D_NUM*G_NUM)]
+DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
+SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
 
 function eqn!(du, u, p, t)
-  d, alpha, g, n = p
+  d, sigma, g, n = p
+  F1, F2 = check_condition(u, sigma)
   f = g .- sin.(u ./ n)
-  exch = [d * sin(u[2] - u[1] - alpha), d * sin(u[1] - u[2] - alpha)]
-  du .= f .+ exch
+  exch = d*[F2, F1]
+  du .= f - exch
 end
 
-function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
-      G2 = G_LIST[k];
+
+function check_condition(y, sigma)
+  F1 = y[1] > pi/2 - sigma && y[1] < pi/2 + sigma ?  0 :  1
+  F2 = y[2] > pi/2 - sigma && y[2] < pi/2 + sigma ?  0 :  1
+  return F1, F2
+end
+
+function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
+  Threads.@threads for k in eachindex(sigma_LIST)
+      sigma = sigma_LIST[k];
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
@@ -64,8 +72,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         
         tspan = (a, b)
         
-        p = (d, ALPHA, [G1, G2], PAR_N);
-        y0 = [0; 0]
+        p = (d, sigma, [gamma1, gamma2],  PAR_N);
+        y0 = [pi/2; pi/2]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
@@ -84,11 +92,9 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         end 
 
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
-        
-        b = copy(b_new);
-        delta = G2 - G1
-        sync = [0, 0]
 
+        b = copy(b_new);
+        sync = [0, 0]
         if (err == 0)
           sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
           sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
@@ -96,8 +102,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
             ratio = 0
           end
         end
-          
-        @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
+
+        @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
     end
     k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
@@ -128,13 +134,13 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
   end
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
-  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])  
-
+  BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
+  
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
   k_ENABLE_ADAPTIVE_GRID && (b = ADAPTIVE_GRID(minimum([length(BURSTS1), length(BURSTS2)]), b))
-
+  
   ratio = FIND_RATIO(BURSTS1, BURSTS2)
 
   DIFF_SP = FIND_DIFF(SPIKES1, SPIKES2, T)
@@ -143,12 +149,12 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
 end
 
 function ADAPTIVE_GRID(num_of_bursts, b)
-    if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
-       b = b + b_step;
-       return b;
-    else
-      return b;
-    end
+  if (num_of_bursts < (ADAPTIVE_SET_ERROR + SPIKE_ERROR))
+     b = b + b_step;
+     return b;
+  else
+    return b;
+  end
 end
 
 function handle_errors(err1::Bool, err2::Bool)
@@ -186,15 +192,15 @@ end
 function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
   UNSTBL = 1
   if err > 0
-    return UNSTBL
+      return UNSTBL
   end
   B = zeros(Int64, div(length(SPIKES), n))
   for m in n:n:length(SPIKES)
     B[div(m, n)] = SPIKES[m]
   end
   if length(B) < 2*unstable_err 
-      # err = 1;
-      return UNSTBL
+    # err = 1;
+    return UNSTBL
   end
   element = B[unstable_err]
   UNSTBL = findall(SPIKES .== element)
@@ -275,19 +281,19 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G1, G2, D, PAR_N)
+function DRAW(T, Y, gamma1, gamma2, D, PAR_N)
     Y = [mod.(y, 2 * pi) for y in Y]
     n1 = PAR_N[1];
     n2 = PAR_N[2];
-    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
-    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
+    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$gamma1")
+    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$gamma2")
     title!(L"d = %$D")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")
 end
 
-@time PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPHA);
+@time  PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 
 if k_IS_SAVE_DATA 
   times = Dates.format(now(),"__yyyymmdd_HHMM");

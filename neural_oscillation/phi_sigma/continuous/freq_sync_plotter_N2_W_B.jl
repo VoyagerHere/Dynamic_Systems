@@ -6,10 +6,10 @@ using Dates
 using Plots
 gr()
 
-alpha_txt = "π/8"
-N1 = 3;
-N2 = 3;
-@load "cont_1__20240304_1951.jld2" DATA
+alpha_txt = "2π/3"
+N1 = 2;
+N2 = 2;
+@load "pi_2_3__2_2__20240318_1946.jld2" DATA
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
