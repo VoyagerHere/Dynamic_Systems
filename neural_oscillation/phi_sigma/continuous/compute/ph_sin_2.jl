@@ -23,16 +23,17 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__1_1"
-N1 = 1 
-N2 = 1
+name = "ph_sin_2"
+N1 = 3 
+N2 = 3
+const DELTA = 0.000005
+
 
 const NUM = 2;
 const K = -500
 const PAR_N = [N1, N2];
-const D_MAX =  1.5
+const D_MAX =  0.5
 const D_ACCURACY =  0.005
-const DELTA = 0.001
 const gamma1 = 1.01
 const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
