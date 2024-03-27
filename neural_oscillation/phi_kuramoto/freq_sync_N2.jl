@@ -15,10 +15,10 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_8__2_2"
-const ALPHA = pi / 8
-N1 = 2
-N2 = 2
+name = "pi_2_3__3_3"
+const ALPHA = 2*pi / 3
+N1 = 3
+N2 = 3
 
 const NUM = 2;
 global PAR_N = [N1, N2];
@@ -46,7 +46,7 @@ end
 function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
-  b = 18000;
+  b = 10000;
 
   for m in eachindex(D_LIST)    
     tspan = (a, b)

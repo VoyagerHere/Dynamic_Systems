@@ -5,7 +5,7 @@ using LaTeXStrings
 Plots.scalefontsizes()
 Plots.scalefontsizes(1.5)
 
-const k_DELETE_TRANSIENT = true; 
+const k_DELETE_TRANSIENT = false; 
 
 
 function eqn!(du, u, p, t)
@@ -30,11 +30,11 @@ function DELETE_TRANSIENT(Y, tol=0.002)
 end
 
 n = [2, 2];
-d = 7.5
+d = 0.02
 num = length(n);
 alpha = pi/8;
 alpha_txt = "π/8"
-tspan = (8030, 8130)
+tspan = (8030, 10000)
 
 y0 = [0, 0]
 

@@ -7,12 +7,12 @@ using Plots
 gr()
 
 
-alpha_txt = "π/8"
+alpha_txt = "2π/3"
 N1 = 3;
 N2 = 3;
 N3 = 3;
-name = "w_{b}^{1,2}/w_{b}^{1,2}"
-@load "pi_8__3_3_3__20240319_1439.jld2" DATA W DEATH
+name = "w_{b}^{1}/w_{b}^{2}"
+@load "pi_2_3__3_3_3__20240327_0602.jld2" DATA W DEATH
  
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -44,19 +44,19 @@ rectangle(w, h, x, y) = Shape(x .+ [0,w,w,0], y .+ [0,0,h,h])
 
 
 if length(GOOD) > 0
-  plot(D_VEC[GOOD], RATIO_W[GOOD], label=L"w_{1}/w_{2}(d)")
+  plot(D_VEC[GOOD], RATIO_W[GOOD], label=L"w_{b}^{1}(d)/w_{b}^{2}(d)")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
 if length(DEAD1) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey24", label = L"Death $\; \varphi_1$")
+  plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey24", label = L"D $\varphi_1$")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
 if length(DEAD2) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD2])-minimum(D_VEC[DEAD2]),1,minimum(D_VEC[DEAD2]),0), opacity=.5, color = colorant"grey34", label = L"Death $\varphi_1, \varphi_2$")
+  plot!(rectangle(maximum(D_VEC[DEAD2])-minimum(D_VEC[DEAD2]),1,minimum(D_VEC[DEAD2]),0), opacity=.5, color = colorant"grey34", label = L"D $\varphi_1, \varphi_2$")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
 if length(DEAD3) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD3])-minimum(D_VEC[DEAD3]),1,minimum(D_VEC[DEAD3]),0), opacity=1, color = colorant"black",  label = L"Death $\varphi_1, \varphi_2, \varphi_3$")
+  plot!(rectangle(maximum(D_VEC[DEAD3])-minimum(D_VEC[DEAD3]),1,minimum(D_VEC[DEAD3]),0), opacity=1, color = colorant"black",  label = L"D $\varphi_1, \varphi_2, \varphi_3$")
 end
 
 # # Calculate center points for each area
@@ -70,7 +70,7 @@ end
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt")
 # ylims!(0,  1)
- xlims!(0.01,  3.0)
+#  xlims!(0,  0.03)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"%$name", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 
