@@ -15,16 +15,17 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_8__1_1"
+name = "fr_cos_4"
 N1 = 1 
 N2 = 1
+const DELTA = 0.05
+
 
 const NUM = 2;
 const K = -500
 const PAR_N = [N1, N2];
-const D_MAX =  1.5
+const D_MAX =  0.5
 const D_ACCURACY =  0.005
-const DELTA = 0.001
 const gamma1 = 1.01
 const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
@@ -40,7 +41,7 @@ W = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
 function eqn!(du, u, p, t)#u - это тета
   d, sigma, g, n = p
-  f = g .- sin.(u ./ n)
+  f = g .- cos.(u ./ n)
   exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
   du .= f - d*exch
 end
