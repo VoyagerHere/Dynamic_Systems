@@ -47,7 +47,7 @@ function eqn!(du, u, p, t)#u - это тета
 end
 
 function FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST)
-  Threads.@threads   for k in eachindex(sigma_LIST)
+  for k in eachindex(sigma_LIST)
     # num_of_iterations = D_NUM*sigma_NUM
     sigma = sigma_LIST[k];
     a = 8000;
