@@ -15,7 +15,7 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "fr_cos_5"
+name = "fr_son_5"
 N1 = 3
 N2 = 3
 const DELTA = 0.05

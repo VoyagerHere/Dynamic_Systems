@@ -15,7 +15,7 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "fr_cos_7"
+name = "fr_sin_7"
 N1 = 1
 N2 = 1
 const DELTA = 0.5
