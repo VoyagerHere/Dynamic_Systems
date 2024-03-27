@@ -15,7 +15,7 @@ using Dates
 using PythonPlot
 pygui(true)
 
-alpha_txt = "π/8"
+alpha_txt = "2π/3"
 N1 = 2;
 N2 = 2;
 N3 = 2;
@@ -24,7 +24,7 @@ N3 = 2;
 # points to plot area
 accuracy = 10;
 
-@load "pi_8__2_2_2__20240317_2244.jld2" DATA SYNC DEATH
+@load "pi_2_3__2_2_2__20240322_1635.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -68,15 +68,19 @@ QUASI_PERIODIC = intersect(
   if(length(QUASI_PERIODIC) > accuracy)
     scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color = "grey", s=size_sc, label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
-   end
-   if(length(DEAD1) > accuracy)
-    scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color = "slategrey", label=L"$S$%$counter_field: D $\varphi_1$")
-    global counter_field+=1;
+  end
+  if (length(DEAD1) != length(DEAD2))
+    if(length(DEAD1) > accuracy)
+      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color = "slategrey", label=L"$S$%$counter_field: D $\varphi_1$")
+      global counter_field+=1;
+    end
   end
   
-  if(length(DEAD2) > accuracy)
-    scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color = "darkgrey", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
-    global counter_field+=1;
+  if (length(DEAD2) != length(DEAD3))
+    if(length(DEAD2) > accuracy)
+      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color = "darkgrey", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
+      global counter_field+=1;
+    end
   end
 
   
@@ -118,13 +122,15 @@ if(length(Spike_Sync_ALL) > accuracy)
   global counter_field+=1;
 end
 
-# legend(loc="lower right", fontsize=10)
-legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=10)
+# legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=12)
+# legend(loc="lower right", fontsize=16, framealpha=1)
+legend(loc="upper left", fontsize=16, framealpha=1)
+
 
 # for handle in lgnd.legend_handles
 #   handle.set_markersize([6.0])
 # end
 
-title(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt")
-xlabel(L"d")
-ylabel(L"\Delta")
+title(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt", fontsize=20)
+xlabel(L"d", fontsize=20)
+ylabel(L"\Delta", fontsize=20)

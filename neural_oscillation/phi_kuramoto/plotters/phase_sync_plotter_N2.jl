@@ -7,10 +7,10 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "pi_2_3__2_2__20240318_1552"
-alpha_txt = "2π/3"
-N1 = 2;
-N2 = 2;
+name = "pi_8__3_3__20240318_1441"
+alpha_txt = "π/8"
+N1 = 3;
+N2 = 3;
 
 @load "$name.jld2" DATA SYNC
 
@@ -61,7 +61,7 @@ for ratio in unique_ratios
         global counter_field+=1
       else
         if ((length(Burst_p) > accuracy))
-          scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS  1:%$ratio") 
+          scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS 1:%$ratio") 
           global counter_field+=1
         end
         if ((length(Spike_p) > accuracy))
@@ -72,9 +72,9 @@ for ratio in unique_ratios
     end
   end
 end
-# legend(loc="lower right", fontsize=10)
-legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=10)
+legend(loc="lower right", fontsize=16, framealpha=1)
+# legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=12)
 
-title(L"$n_1$ = %$N1, $n_2$ = %$N2,  $\alpha$ = %$alpha_txt")
-xlabel(L"d")
-ylabel(L"\Delta")
+title(L"$n_1$ = %$N1, $n_2$ = %$N2,  $\alpha$ = %$alpha_txt", fontsize=20)
+xlabel(L"d", fontsize=20)
+ylabel(L"\Delta", fontsize=20)
