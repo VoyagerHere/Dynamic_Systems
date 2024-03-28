@@ -23,7 +23,7 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
 
-name = "oh_dicr_1"
+name = "dicr_1"
 N1 = 1 
 N2 = 1
 
@@ -81,14 +81,15 @@ function solver(a, b, sigma, d, y0, n)
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
-  Threads.@threads for k in eachindex(sigma_LIST)
+  # Threads.@threads for k in eachindex(sigma_LIST)
+    for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
-        D = D_LIST[m]
+        global D = D_LIST[m]
         y0 = [pi/2; pi/2]
-        Y, T = solver(a, b, sigma, D, y0, PAR_N)
+        global Y, T = solver(a, b, sigma, D, y0, PAR_N)
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         b = copy(b_new);
@@ -103,6 +104,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 
         @inbounds DATA[m + (k-1)*D_NUM] = [D, ratio, sigma]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
+        return;
     end
     k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
     end

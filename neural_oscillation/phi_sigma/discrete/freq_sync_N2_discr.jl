@@ -15,20 +15,23 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_8__1_1"
+name = "fr_dicr_1"
 N1 = 1 
 N2 = 1
 
+const G1 = 1.01
+const DELTA = 0.001
+# const G2 = 1.01+DELTA
+const G2 = 1.002
+g = [G1, G2]
+const D_ACCURACY =  0.005
+const sigma_ACCURACY =  0.005
+const D_MAX =  3
+const sigma_MAX = 0.3
+
 const NUM = 2;
 const PAR_N = [N1, N2];
-const D_MAX =  1.5
-const D_ACCURACY =  0.005
-const DELTA = 0.001
-const gamma1 = 1.01
-const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
-const sigma_MAX = pi
-const sigma_ACCURACY =  0.005
 sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
@@ -37,64 +40,61 @@ sigma_NUM = length(sigma_LIST)
 DATA = [zeros(4) for _ in 1:(D_NUM*sigma_NUM)]
 W = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-function eqn!(du, u, p, t)
-  d, sigma, g, n = p
-  F1, F2 = check_condition(u, sigma)
-  f = g .- sin.(u ./ n)
-  exch = d*[F2, F1]
-  du .= f - exch
+
+function eqn(t, y, d, no, sigma, F)
+  yy = mod.(y, 2*pi)
+  f = g - sin.(y ./ no)
+  exch = d * [F[2], F[1]]
+  dy_dt = f - exch
+  F1, F2 = chech_condition(yy, sigma)
+  F = [F1, F2]
+  return dy_dt, F
 end
 
-function check_condition(y, sigma)
-  F1 = y[1] > pi/2 - sigma && y[1] < pi/2 + sigma ?  0 :  1
-  F2 = y[2] > pi/2 - sigma && y[2] < pi/2 + sigma ?  0 :  1
+function chech_condition(y, sigma)
+  F1 = (y[1] > pi/2 - sigma) && (y[1] < pi/2 + sigma) ? 0 : 1
+  F2 = (y[2] > pi/2 - sigma) && (y[2] < pi/2 + sigma) ? 0 : 1
   return F1, F2
 end
 
+function solver(a, b, sigma, d, y0, n)
+  h = 1/100
+  T = a:h:(b-h)
+  Y = zeros(length(T), 2)
+  Y[1,:] = y0
+  F = [0, 0]
 
-function FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST)
+  for i = 1:(length(T)-1)
+      dy_dt, F = eqn(T[i], Y[i,:], d, n, sigma, F)
+      Y[i+1,1] = Y[i,1] + dy_dt[1]*(h)
+      Y[i+1,2] = Y[i,2] + dy_dt[2]*(h)
+  end
+  return Y, T
+end
+
+
+function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
   Threads.@threads  for k in eachindex(sigma_LIST)
     # num_of_iterations = D_NUM*sigma_NUM
     sigma = sigma_LIST[k];
     a = 8000;
-    b = 18000;
+    b = 10000;
 
     for m in eachindex(D_LIST)    
-        d = D_LIST[m]
-                
-        tspan = (a, b)
+      D = D_LIST[m]
+      y0 = [pi/2; pi/2]
+      Y, T = solver(a, b, sigma, D, y0, PAR_N)
 
-        p = (d, sigma, [gamma1, gamma2],  PAR_N);
-        y0 = [pi/2; pi/2]
+      w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
 
-        prob = ODEProblem(eqn!, y0, tspan, p)
-        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-        Y = sol.u;
-        T = sol.t;
+      ratio_s = w_s[1] / w_s[2];
+      ratio_b = w_b[1] / w_b[2];
 
-        if (k_DELETE_TRANSIENT)
-          index = DELETE_TRANSIENT(Y)
-          start = T[index];
-          y0 = [start, start]
-
-          prob = ODEProblem(eqn!, y0, tspan, p)
-          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-          Y = sol.u;
-          T = sol.t;
-        end
-
-        w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
-
-        ratio_s = w_s[1] / w_s[2];
-        ratio_b = w_b[1] / w_b[2];
-
-        if (err != 0)
-          DATA[m] = [d, sigma,  -err, -err]
-          continue;
-        end
-
-        
-        DATA[m + (k-1)*D_NUM] = [d, sigma, ratio_s, ratio_b]
+      if (err != 0)
+        DATA[m] = [D, sigma,  -err, -err]
+        continue;
+      end
+        DATA[m + (k-1)*D_NUM] = [D, sigma, ratio_s, ratio_b]
         W[m] = vcat(w_s, w_b)
         # it = m + (k-1)*D_NUM
         # println("Iteration $it of $num_of_iterations")
@@ -103,7 +103,6 @@ function FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST)
 end
 
 function SYNC_PAIR(T, Y, PAR_N)
-  Y = reduce(vcat,transpose.(Y))
   global SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   global SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
@@ -126,8 +125,8 @@ function SYNC_PAIR(T, Y, PAR_N)
   wb_1 = 2*pi./sum(Times_1);
   wb_2 = 2*pi./sum(Times_2);
 
-  global ws_1 = 2*pi./avg(Times_SP_1);
-  global ws_2 = 2*pi./avg(Times_SP_2);
+  ws_1 = 2*pi./avg(Times_SP_1);
+  ws_2 = 2*pi./avg(Times_SP_2);
 
   return ([ws_1, ws_2], [wb_1, wb_2], err)
 end
@@ -216,19 +215,19 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, gamma1, gamma2, d, PAR_N)
+function DRAW(T, Y, G1, G2, D, PAR_N)
   Y = [mod.(y, 2 * pi) for y in Y]
   n1 = PAR_N[1];
   n2 = PAR_N[2];
-  plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$gamma1")
-  plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$gamma2")
-  title!(L"d = %$d")
+  plot(T, Y[:,2], label=L"n_1 = %$n1, \gamma_{1}=%$G1", linecolor=:red)
+  plot!(T, Y[:,1], label=L"n_2 = %$n2 , \gamma_{2}=%$G2", linecolor=:darkgreen)
+  title!(L"d = %$D")
   ylims!(0,  2*pi)
   xlabel!(L"t")
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, gamma1, gamma2, PAR_N, D_LIST, sigma_LIST);
+FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST);
 
 
 if k_IS_SAVE_DATA 

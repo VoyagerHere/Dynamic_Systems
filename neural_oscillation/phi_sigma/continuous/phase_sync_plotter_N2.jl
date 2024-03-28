@@ -7,11 +7,10 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "untitiled"
-N1 = 3;
-N2 = 3;
+N1 = 1;
+N2 = 1;
 
-@load "pi_8__2_2__20240326_0005.jld2" DATA SYNC
+@load "cont_1__20240304_1934.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -40,28 +39,28 @@ for ratio in unique_ratios
   end 
   ratio_ind = findall(x -> x == ratio, RATIO_VEC)
   if (ratio == 0)
-    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "gray", label=L"$S_{%$counter_field}$: Q-P")
+    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "lightcoral", label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
   elseif (ratio == -1)
-    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "darkgrey", label=L"$S_{%$counter_field}$: D $\varphi_1$")
+    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "indianred", label=L"$S$%$counter_field: D $\varphi_1$")
     global counter_field += 1;
   elseif (ratio == -2)
-    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "slategrey", label=L"$S_{%$counter_field}$: D $\varphi_2$")
+    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "firebrick", label=L"$S$%$counter_field: D $\varphi_2$")
     global counter_field +=1;
   elseif (ratio == -3)
-    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "black", label=L"$S_{%$counter_field}$: D $\varphi_1, \varphi_2$")
+    scatter(SIGMA_VEC[ratio_ind], D_VEC[ratio_ind], s=size_sc, color = "darkred", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
     global counter_field +=1;
   else
     Burst_p = intersect(Burst_Sync, ratio_ind)
     Spike_p = intersect(Spike_Sync, ratio_ind)
     if (length(Spike_p) > accuracy) && (length(Burst_p) > accuracy)
       if (Spike_p == Burst_p) 
-        scatter(SIGMA_VEC[Spike_p], D_VEC[Spike_p], s=size_sc, label=L"$S_{%$counter_field}$: SS 1:%$ratio")
+        scatter(SIGMA_VEC[Spike_p], D_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       else
-        scatter(SIGMA_VEC[Burst_p], D_VEC[Burst_p], s=size_sc, label=L"$S_{%$counter_field}$: BS  1:%$ratio") 
+        scatter(SIGMA_VEC[Burst_p], D_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS 1:%$ratio") 
         global counter_field+=1
-        scatter(SIGMA_VEC[Spike_p], D_VEC[Spike_p], s=size_sc, label=L"$S_{%$counter_field}$: SS 1:%$ratio")
+        scatter(SIGMA_VEC[Spike_p], D_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       end
     end
