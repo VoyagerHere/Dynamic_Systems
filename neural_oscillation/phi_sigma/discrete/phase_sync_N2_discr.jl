@@ -23,7 +23,7 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
 
-name = "oh_dicr_1"
+name = "ph_dicr_1"
 N1 = 1 
 N2 = 1
 
