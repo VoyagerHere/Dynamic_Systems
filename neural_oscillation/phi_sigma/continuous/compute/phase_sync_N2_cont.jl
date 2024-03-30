@@ -29,7 +29,7 @@ N2 = 1
 const DELTA = 0.05
 
 const sigma_ACCURACY =  0.0005
-const D_ACCURACY =  0.00005
+const D_ACCURACY =  0.0001
 
 
 const NUM = 2;
