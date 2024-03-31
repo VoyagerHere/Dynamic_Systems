@@ -9,7 +9,7 @@ using Dates
 const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
+const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
@@ -23,17 +23,17 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
 
-name = "dicr_1"
+name = "tmp"
 N1 = 1 
 N2 = 1
 
 const G1 = 1.01
-const DELTA = 0.001
-# const G2 = 1.01+DELTA
-const G2 = 1.002
+const DELTA = 0.05
+const G2 = 1.01+DELTA
+# const G2 = 1.002
 g = [G1, G2]
 const D_ACCURACY =  0.005
-const sigma_ACCURACY =  0.005
+const sigma_ACCURACY =  0.0005
 const D_MAX =  3
 const sigma_MAX = 0.3
 
@@ -81,11 +81,10 @@ function solver(a, b, sigma, d, y0, n)
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
-  # Threads.@threads for k in eachindex(sigma_LIST)
-    for k in eachindex(sigma_LIST)
+  for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 8500;
       for m in eachindex(D_LIST)
         global D = D_LIST[m]
         y0 = [pi/2; pi/2]
