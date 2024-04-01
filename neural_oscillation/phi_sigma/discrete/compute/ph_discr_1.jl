@@ -30,11 +30,11 @@ N2 = 1
 const G1 = 1.01
 const DELTA = 0.05
 const G2 = 1.01+DELTA
-# const G2 = 1.002
+
 g = [G1, G2]
-const D_ACCURACY =  0.005
+const D_ACCURACY =  0.0005
 const sigma_ACCURACY =  0.0005
-const D_MAX =  3
+const D_MAX =  0.5
 const sigma_MAX = 0.3
 
 const NUM = 2;

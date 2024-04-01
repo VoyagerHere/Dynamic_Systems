@@ -10,7 +10,7 @@ pygui(true)
 N1 = 1;
 N2 = 1;
 
-@load "discr_2__20240304_1934.jld2" DATA SYNC
+@load "ph_dicr_1__20240329_2042.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -70,5 +70,5 @@ end
 legend(bbox_to_anchor=(1, 1.015), loc="upper left", fontsize=10)
 
 title(L"$n_1$ = %$N1, $n_2$ = %$N2")
-xlabel(L"\Sigma")
-ylabel(L"\d")
+xlabel(L"\sigma")
+ylabel(L"d")
