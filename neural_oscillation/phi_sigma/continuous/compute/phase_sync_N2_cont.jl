@@ -31,7 +31,6 @@ const DELTA = 0.05
 const sigma_ACCURACY =  0.0005
 const D_ACCURACY =  0.0001
 
-
 const NUM = 2;
 const K = -500
 const PAR_N = [N1, N2];
