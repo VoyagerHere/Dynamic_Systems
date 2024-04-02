@@ -20,9 +20,8 @@ N1 = 1
 N2 = 1
 
 const G1 = 1.01
-const DELTA = 0.001
-# const G2 = 1.01+DELTA
-const G2 = 1.002
+const DELTA = 0.05
+const G2 = 1.01+DELTA
 g = [G1, G2]
 const D_ACCURACY =  0.005
 const sigma_ACCURACY =  0.005

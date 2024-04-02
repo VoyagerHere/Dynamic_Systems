@@ -23,21 +23,26 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__1_1"
+name = "ph_cont_"
 N1 = 1 
 N2 = 1
+
+const G1 = 1.01
+const DELTA = 0.05
+const G2 = 1.01+DELTA
+g = [G1, G2]
+const D_ACCURACY =  0.005
+const sigma_ACCURACY =  0.005
+const D_MAX =  1.5
+const sigma_MAX = pi
 
 const NUM = 2;
 const K = -500
 const PAR_N = [N1, N2];
-const D_MAX =  1.5
-const D_ACCURACY =  0.005
-const DELTA = 0.001
-const gamma1 = 1.01
-const gamma2 = 1.01+DELTA
 const SYNC_ERROR =  0.25;
-const sigma_MAX = pi
-const sigma_ACCURACY =  0.005
+
+
+
 sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
@@ -48,10 +53,10 @@ DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
 function eqn!(du, u, p, t)#u - это тета
-  d, sigma, g, n = p
+  D, sigma, g, n = p
   f = g .- sin.(u ./ n)
   exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
-  du .= f - d*exch
+  du .= f - D*exch
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
@@ -60,11 +65,11 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
-        d = D_LIST[m]
+        D = D_LIST[m]
         
         tspan = (a, b)
         
-        p = (d, sigma, [gamma1, gamma2],  PAR_N);
+        p = (D, sigma, [G1, G2],  PAR_N);
         y0 = [0; 0]
 
         prob = ODEProblem(eqn!, y0, tspan, p)
@@ -95,7 +100,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
           end
         end
 
-        @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, sigma]
+        @inbounds DATA[m + (k-1)*D_NUM] = [D, ratio, sigma]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
     end
     k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
@@ -273,16 +278,16 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, gamma1, gamma2, D, PAR_N)
-    Y = [mod.(y, 2 * pi) for y in Y]
-    n1 = PAR_N[1];
-    n2 = PAR_N[2];
-    plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$gamma1")
-    plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$gamma2")
-    title!(L"d = %$D")
-    ylims!(0,  2*pi)
-    xlabel!(L"t")
-    ylabel!(L"\varphi")
+function DRAW(T, Y, G1, G2, D, PAR_N)
+  Y = [mod.(y, 2 * pi) for y in Y]
+  n1 = PAR_N[1];
+  n2 = PAR_N[2];
+  plot(T, Y[:,2], label=L"n_1 = %$n1, \gamma_{1}=%$G1", linecolor=:red)
+  plot!(T, Y[:,1], label=L"n_2 = %$n2 , \gamma_{2}=%$G2", linecolor=:darkgreen)
+  title!(L"d = %$D")
+  ylims!(0,  2*pi)
+  xlabel!(L"t")
+  ylabel!(L"\varphi")
 end
 
 @time  PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
