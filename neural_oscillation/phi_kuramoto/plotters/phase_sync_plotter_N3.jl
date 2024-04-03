@@ -43,6 +43,9 @@ counter_field = 1;
 PythonPlot.matplotlib.rcParams["font.size"] = 14
 size_sc = 4
 
+cmap_sp = PythonPlot.matplotlib.cm.get_cmap("summer")
+cmap_brst = PythonPlot.matplotlib.cm.get_cmap("Blues")
+cmap_dth = PythonPlot.matplotlib.cm.get_cmap("Oranges")
 
 Burst_Sync_ALL = findall(x -> x ==  1, SYNC_MATR[:,5])
 Spike_Sync_ALL = findall(x -> x ==  1, SYNC_MATR[:,6])
@@ -66,59 +69,66 @@ QUASI_PERIODIC = intersect(
 
 
   if(length(QUASI_PERIODIC) > accuracy)
-    scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color = "grey", s=size_sc, label=L"$S$%$counter_field: Q-P")
+    scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color=cmap_dth(0.4), s=size_sc, label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
   end
   if (length(DEAD1) != length(DEAD2))
     if(length(DEAD1) > accuracy)
-      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color = "slategrey", label=L"$S$%$counter_field: D $\varphi_1$")
+      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1$")
       global counter_field+=1;
     end
   end
   
   if (length(DEAD2) != length(DEAD3))
     if(length(DEAD2) > accuracy)
-      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color = "darkgrey", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
+      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color=cmap_dth(0.8), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
       global counter_field+=1;
     end
   end
 
   
   if(length(DEAD_ALL) > accuracy)
-    scatter(D_VEC_1[DEAD_ALL], DELTA_VEC[DEAD_ALL], s=size_sc, color = "black", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2, \varphi_3$")
+    scatter(D_VEC_1[DEAD_ALL], DELTA_VEC[DEAD_ALL], s=size_sc, color=cmap_dth(1), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2, \varphi_3$")
     global counter_field+=1;
   end
 
 if (Burst_Sync_12 != Spike_Sync_12)
   if(length(Burst_Sync_12) > accuracy)
-    scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, label=L"$S$%$counter_field: BS 1-2")
+    burst_color = cmap_brst(0.4)
+    scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1-2")
     global counter_field+=1;
   end
 end
 if(length(Spike_Sync_12) > accuracy)
-  scatter(D_VEC_1[Spike_Sync_12], DELTA_VEC[Spike_Sync_12], s=size_sc, label=L"$S$%$counter_field: SS 1-2")
+  spike_color = cmap_sp(0.4)
+  scatter(D_VEC_1[Spike_Sync_12], DELTA_VEC[Spike_Sync_12], s=size_sc, color=spike_color, label=L"$S$%$counter_field: SS 1-2")
   global counter_field+=1;
 end
 
 if (Burst_Sync_23 != Spike_Sync_23)
+  
   if(length(Burst_Sync_23) > accuracy)
-    scatter(D_VEC_1[Burst_Sync_23], DELTA_VEC[Burst_Sync_23], s=size_sc, label=L"$S$%$counter_field: BS 2-3")
+    burst_color = cmap_brst(0.6)
+    scatter(D_VEC_1[Burst_Sync_23], DELTA_VEC[Burst_Sync_23], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 2-3")
     global counter_field+=1;
   end
 end
 if(length(Spike_Sync_23) > accuracy)
-  scatter(D_VEC_1[Spike_Sync_23], DELTA_VEC[Spike_Sync_23], s=size_sc, label=L"$S$%$counter_field: SS 2-3")
+  spike_color = cmap_sp(0.6)
+  scatter(D_VEC_1[Spike_Sync_23], DELTA_VEC[Spike_Sync_23], s=size_sc, color=spike_color, label=L"$S$%$counter_field: SS 2-3")
   global counter_field+=1;
 end
 
 if (Burst_Sync_ALL != Spike_Sync_ALL)
   if(length(Burst_Sync_ALL) > accuracy)
-    scatter(D_VEC_1[Burst_Sync_ALL], DELTA_VEC[Burst_Sync_ALL], s=size_sc, label=L"$S$%$counter_field: GBS")
+    burst_color = cmap_brst(0.8)
+    scatter(D_VEC_1[Burst_Sync_ALL], DELTA_VEC[Burst_Sync_ALL], s=size_sc, color=burst_color, label=L"$S$%$counter_field: GBS")
     global counter_field+=1;
   end
 end
 if(length(Spike_Sync_ALL) > accuracy)
-  scatter(D_VEC_1[Spike_Sync_ALL], DELTA_VEC[Spike_Sync_ALL], s=size_sc, label=L"$S$%$counter_field: GBS")
+  spike_color = cmap_sp(0.8)
+  scatter(D_VEC_1[Spike_Sync_ALL], DELTA_VEC[Spike_Sync_ALL], s=size_sc, color=spike_color, label=L"$S$%$counter_field: GBS")
   global counter_field+=1;
 end
 
