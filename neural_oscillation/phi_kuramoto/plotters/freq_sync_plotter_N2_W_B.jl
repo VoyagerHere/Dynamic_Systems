@@ -29,7 +29,7 @@ rectangle(w, h, x, y) = Shape(x .+ [0,w,w,0], y .+ [0,0,h,h])
 
 if length(GOOD) > 0
   plot(D_VEC[GOOD], RATIO_B[GOOD], label=L"w_{b}^{1}(d)/w_{b}^{2}(d)")
-  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
+  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white, c="aqua")
 end
 if length(DEAD1) > 0
   plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey44", label = L"D $\; \varphi_1$")

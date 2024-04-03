@@ -33,6 +33,11 @@ accuracy = 10;
 PythonPlot.matplotlib.rcParams["font.size"] = 14
 size_sc = 4
 
+cmap_org = PythonPlot.matplotlib.cm.get_cmap("Oranges")
+cmap_bl = PythonPlot.matplotlib.cm.get_cmap("Blues")
+cmap_dth = PythonPlot.matplotlib.cm.get_cmap("Reds")
+
+
 unique_ratios = sort!(unique_ratios, alg=InsertionSort);
 
 for ratio in unique_ratios
@@ -41,31 +46,37 @@ for ratio in unique_ratios
   end 
   ratio_ind = findall(x -> x == ratio, RATIO_VEC)
   if (ratio == 0)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "gray", label=L"$S$%$counter_field: Q-P")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, c=cmap_dth(0.4), label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
   elseif (ratio == -1)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "darkgrey", label=L"$S$%$counter_field: D $\varphi_1$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, c=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1$")
     global counter_field += 1;
   elseif (ratio == -2)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "slategrey", label=L"$S$%$counter_field: D $\varphi_2$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, c=cmap_dth(0.8), label=L"$S$%$counter_field: D $\varphi_2$")
     global counter_field +=1;
   elseif (ratio == -3)
-    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, color = "black", label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
+    scatter(D_VEC[ratio_ind], DELTA_VEC[ratio_ind], s=size_sc, c=cmap_dth(1), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
     global counter_field +=1;
   else
     Burst_p = intersect(Burst_Sync, ratio_ind)
     Spike_p = intersect(Spike_Sync, ratio_ind)
     if (length(Spike_p) > accuracy) || (length(Burst_p) > accuracy)
       if (Spike_p == Burst_p) 
-        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
+        color = cmap_org(length(Spike_p) / size) # Normalize the length to a value between 0 and 1
+        
+        scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, c=color,  label=L"$S$%$counter_field: SS 1:%$ratio")
         global counter_field+=1
       else
         if ((length(Burst_p) > accuracy))
-          scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, label=L"$S$%$counter_field: BS 1:%$ratio") 
+          burst_color = cmap_bl(length(Burst_p) / size) # Normalize the length to a value between 0 and 1
+
+          scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, c=burst_color, label=L"$S$%$counter_field: BS 1:%$ratio") 
           global counter_field+=1
         end
         if ((length(Spike_p) > accuracy))
-          scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, label=L"$S$%$counter_field: SS 1:%$ratio")
+          spike_color = cmap_org(length(Spike_p) / size) # Normalize the length to a value between 0 and 1
+
+          scatter(D_VEC[Spike_p], DELTA_VEC[Spike_p], s=size_sc, c=spike_color,label=L"$S$%$counter_field: SS 1:%$ratio")
           global counter_field+=1
         end
       end
