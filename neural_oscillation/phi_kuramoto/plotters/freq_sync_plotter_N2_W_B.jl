@@ -6,15 +6,14 @@ using Dates
 using Plots
 gr()
 
-alpha_txt = "2π/3"
+alpha_txt = "π/2"
 N1 = 3;
 N2 = 3;
-@load "pi_2_3__3_3__20240327_0410.jld2" DATA
+@load "pi_1_2__20240403_1505.jld2" DATA
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
 D_VEC = DATA[:,1]
-# RATIO_S = DATA[:,2]
 RATIO_B = DATA[:,3]
 
 # RATIO_B = round.(RATIO_B; digits = 3);
@@ -32,10 +31,10 @@ if length(GOOD) > 0
   plot(D_VEC[GOOD], RATIO_B[GOOD], label=L"w_{b}^{1}(d)/w_{b}^{2}(d)")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
-# if length(DEAD1) > 0
-#   plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey44", label = L"D $\; \varphi_1$")
-#   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
-# end
+if length(DEAD1) > 0
+  plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey44", label = L"D $\; \varphi_1$")
+  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
+end
 if length(DEAD2) > 0
   plot!(rectangle(maximum(D_VEC[DEAD2])-minimum(D_VEC[DEAD2]),1,minimum(D_VEC[DEAD2]),0), opacity=.5, color = colorant"grey34", label = L"D $\varphi_2$")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
@@ -53,7 +52,7 @@ end
 # annotate!(center_DEAD3,  0.5, text("Death3", :center,  5))
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $\alpha$ = %$alpha_txt")
-ylims!(0,  1)
+ylims!(0.7,  1)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"w_{b}^{1}/w_{b}^{2}", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 

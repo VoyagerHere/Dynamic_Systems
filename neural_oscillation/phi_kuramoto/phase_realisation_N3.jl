@@ -33,12 +33,13 @@ function DELETE_TRANSIENT(Y, tol=0.002)
 end
 
 n = [3, 3, 3];
-d1 = 4
+d1 = 0.01
 d = [d1, d1]
 num = length(n);
 g_init = 1.01;
-alpha = 2*pi/3;
-tspan = (8000, 8030)
+alpha = pi/2 - pi/18;
+alpha_txt = "𝝅/2"
+tspan = (8000, 10000)
 
 y0 = [0, 0, 0]
 const DELTA = 0.005;
