@@ -15,17 +15,20 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "pi_2_3__3_3"
-const ALPHA = 2*pi / 3
+name = "fr_pi_8__2_2"
+const ALPHA = pi / 8
 N1 = 3
 N2 = 3
+const D_MAX =  0.02
+const D_ACCURACY =  0.00001
+const GStart =  1.01
+const DELTA = 0.001;
+
+
 
 const NUM = 2;
 global PAR_N = [N1, N2];
-const D_MAX =  0.03
-const D_ACCURACY =  0.00001
-const GStart =  1.01
-const DELTA = 0.005;
+
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 

@@ -31,12 +31,12 @@ const ALPHA = pi/8
 
 const NUM = 2;
 const PAR_N = [N1, N2];
-const D_MAX =  0.07
+const D_MAX =  0.05
 const D_ACCURACY =  0.0001
 const G_NUM = 640
 const SYNC_ERROR =  0.25;
 const GStart =  1.01
-const DELTA =  0.025
+const DELTA =  0.01
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
