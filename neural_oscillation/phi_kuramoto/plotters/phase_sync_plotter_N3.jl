@@ -15,16 +15,16 @@ using Dates
 using PythonPlot
 pygui(true)
 
-alpha_txt = "2π/3"
-N1 = 2;
-N2 = 2;
-N3 = 2;
+alpha_txt = "π/2"
+N1 = 3;
+N2 = 3;
+N3 = 3;
 
 # Change it to correct number of 
 # points to plot area
 accuracy = 10;
 
-@load "pi_2_3__2_2_2__20240322_1635.jld2" DATA SYNC DEATH
+@load "ph_1_2__3_3_3__20240403_1632.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -44,7 +44,7 @@ PythonPlot.matplotlib.rcParams["font.size"] = 14
 size_sc = 4
 
 cmap_sp = PythonPlot.matplotlib.cm.get_cmap("summer")
-cmap_brst = PythonPlot.matplotlib.cm.get_cmap("Blues")
+cmap_brst = PythonPlot.matplotlib.cm.get_cmap("cool")
 cmap_dth = PythonPlot.matplotlib.cm.get_cmap("Oranges")
 
 Burst_Sync_ALL = findall(x -> x ==  1, SYNC_MATR[:,5])
@@ -69,36 +69,36 @@ QUASI_PERIODIC = intersect(
 
 
   if(length(QUASI_PERIODIC) > accuracy)
-    scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color=cmap_dth(0.4), s=size_sc, label=L"$S$%$counter_field: Q-P")
+    scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color="lavender", s=size_sc, label=L"$S$%$counter_field: Q-P")
     global counter_field+=1;
   end
   if (length(DEAD1) != length(DEAD2))
     if(length(DEAD1) > accuracy)
-      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1$")
+      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color=cmap_dth(0.4), label=L"$S$%$counter_field: D $\varphi_1$")
       global counter_field+=1;
     end
   end
   
   if (length(DEAD2) != length(DEAD3))
     if(length(DEAD2) > accuracy)
-      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color=cmap_dth(0.8), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
+      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
       global counter_field+=1;
     end
   end
 
   
   if(length(DEAD_ALL) > accuracy)
-    scatter(D_VEC_1[DEAD_ALL], DELTA_VEC[DEAD_ALL], s=size_sc, color=cmap_dth(1), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2, \varphi_3$")
+    scatter(D_VEC_1[DEAD_ALL], DELTA_VEC[DEAD_ALL], s=size_sc, color=cmap_dth(0.8), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2, \varphi_3$")
     global counter_field+=1;
   end
 
-if (Burst_Sync_12 != Spike_Sync_12)
-  if(length(Burst_Sync_12) > accuracy)
-    burst_color = cmap_brst(0.4)
-    scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1-2")
-    global counter_field+=1;
-  end
-end
+# if (Burst_Sync_12 != Spike_Sync_12)
+#   if(length(Burst_Sync_12) > accuracy)
+#     burst_color = cmap_brst(0.4)
+#     scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1-2")
+#     global counter_field+=1;
+#   end
+# end
 if(length(Spike_Sync_12) > accuracy)
   spike_color = cmap_sp(0.4)
   scatter(D_VEC_1[Spike_Sync_12], DELTA_VEC[Spike_Sync_12], s=size_sc, color=spike_color, label=L"$S$%$counter_field: SS 1-2")

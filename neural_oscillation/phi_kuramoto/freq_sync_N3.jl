@@ -107,7 +107,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
     ratio_b_2_3 = w_b_2_3[1] / w_b_2_3[2];
 
     @inbounds DATA[m] = [d1, d2, ratio_s_1_2, ratio_b_1_2, ratio_s_2_3, ratio_b_2_3]
-    @inbounds W[m] = vcat(w_s_1_2, w_b_1_2, w_s_2_3, w_b_2_3)
+    W[m] = vcat(w_s_1_2, w_b_1_2, w_s_2_3, w_b_2_3)
     @inbounds DEATH[m] = err;
     k_PRINT_ITERATION && println("Iteration $m of $num_of_iterations")
   end
