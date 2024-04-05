@@ -23,19 +23,18 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
 
-name = "ph_dicr_1"
+name = "tmp"
 N1 = 1 
 N2 = 1
 
-const G1 = 1.01
-const DELTA = 0.05
-const G2 = 1.01+DELTA
+const G1 = 1.001
+const G2 = 1.002
 
 g = [G1, G2]
 const D_ACCURACY =  0.0005
 const sigma_ACCURACY =  0.0005
-const D_MAX =  0.5
-const sigma_MAX = 0.3
+const D_MAX =  2.0
+const sigma_MAX = 2.0
 
 const NUM = 2;
 const PAR_N = [N1, N2];
@@ -49,35 +48,52 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-function eqn(t, y, d, no, sigma, F)
-  yy = mod.(y, 2*pi)
+function eqn(y, t, d, no, F)
   f = g - sin.(y ./ no)
   exch = d * [F[2], F[1]]
   dy_dt = f - exch
-  F1, F2 = chech_condition(yy, sigma)
-  F = [F1, F2]
-  return dy_dt, F
+  return dy_dt
 end
 
 function chech_condition(y, sigma)
-  F1 = (y[1] > pi/2 - sigma) && (y[1] < pi/2 + sigma) ? 0 : 1
-  F2 = (y[2] > pi/2 - sigma) && (y[2] < pi/2 + sigma) ? 0 : 1
+  y[1] = mod.(y[1], 2 * pi)
+  y[2] = mod.(y[2], 2 * pi)
+
+
+  if ((y[1] > pi/2 - sigma) && (y[1] < pi/2 + sigma))
+    F1 =  0;
+  else
+    F1 = 1;
+  end
+
+  if ((y[2] > pi/2 - sigma) && (y[2] < pi/2 + sigma))
+    F2 =  0;
+  else
+    F2 = 1;
+  end
+
   return F1, F2
 end
 
-function solver(a, b, sigma, d, y0, n)
-  h = 1/100
-  T = a:h:(b-h)
-  Y = zeros(length(T), 2)
-  Y[1,:] = y0
-  F = [0, 0]
 
-  for i = 1:(length(T)-1)
-      dy_dt, F = eqn(T[i], Y[i,:], d, n, sigma, F)
-      Y[i+1,1] = Y[i,1] + dy_dt[1]*(h)
-      Y[i+1,2] = Y[i,2] + dy_dt[2]*(h)
+function solver(a, b, sigma, d, y0)
+  h = 1/100
+  t = a:h:(b-h)
+  global F = [0, 0]
+  n = length(t)
+  y = zeros((n, length(y0)))
+  y[1,:] = y0
+
+  for i in 1:n-1
+    h = t[i+1] - t[i]
+    k1 = eqn(y[i,:], t[i], d, PAR_N, F)
+    k2 = eqn(y[i,:] + k1 * h/2, t[i] + h/2, d, PAR_N, F)
+    k3 = eqn(y[i,:] + k2 * h/2, t[i] + h/2, d, PAR_N, F)
+    k4 = eqn(y[i,:] + k3 * h, t[i] + h, d, PAR_N, F)
+    y[i+1,:] = y[i,:] + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
+    F = chech_condition(y, sigma);
   end
-  return Y, T
+  return y, t
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
@@ -88,7 +104,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
       for m in eachindex(D_LIST)
         D = D_LIST[m]
         y0 = [pi/2; pi/2]
-        Y, T = solver(a, b, sigma, D, y0, PAR_N)
+        Y, T = solver(a, b, sigma, D, y0)
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         b = copy(b_new);
