@@ -32,7 +32,7 @@ const G2 = 1.002
 
 g = [G1, G2]
 const D_ACCURACY =  0.0005
-const sigma_ACCURACY =  0.0005
+const sigma_ACCURACY =  0.001
 const D_MAX =  0.2
 const sigma_MAX = 2.0
 
