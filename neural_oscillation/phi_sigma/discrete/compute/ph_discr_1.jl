@@ -23,7 +23,7 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
 
-name = "tmp"
+name = "ph_discr"
 N1 = 1 
 N2 = 1
 
