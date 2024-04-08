@@ -9,7 +9,7 @@ using Dates
 const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
+const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = false; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
@@ -23,10 +23,10 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_2_3__3_3"
+name = "pi_8__3_3_dth"
 N1 = 3
 N2 = 3
-const ALPHA = 2pi/3
+const ALPHA = pi/8
 
 
 const NUM = 2;
@@ -37,7 +37,7 @@ const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.012
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0.25:D_ACCURACY:2.0
+D_LIST = 5.3:D_ACCURACY:5.5
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -53,13 +53,13 @@ function eqn!(du, u, p, t)
 end
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
-      G2 = G_LIST[k];
+    global G1 = GStart;
+    for k in eachindex(G_LIST)
+      global G2 = G_LIST[k];
       a = 8000;
       b = 10000;
       for m in eachindex(D_LIST)
-        d = D_LIST[m]
+        global d = D_LIST[m]
         
         tspan = (a, b)
         
@@ -68,8 +68,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-        Y = sol.u;
-        T = sol.t;
+        global Y = sol.u;
+        global T = sol.t;
 
         if (k_DELETE_TRANSIENT)
           index = DELETE_TRANSIENT(Y)
@@ -82,7 +82,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
           T = sol.t;
         end 
 
-        DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+        global DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
         
         b = copy(b_new);
         delta = G2 - G1
@@ -98,6 +98,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
           
         @inbounds DATA[m + (k-1)*D_NUM] = [d, ratio, delta]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
+        return;
     end
     k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
     end

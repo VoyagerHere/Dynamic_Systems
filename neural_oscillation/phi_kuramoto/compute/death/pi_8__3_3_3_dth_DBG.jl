@@ -9,13 +9,13 @@ using Dates
 const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
-const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false; 
+const k_IS_SAVE_DATA = false;
+const k_DELETE_TRANSIENT = true; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
-const b_init = 12000
+const b_init = 10500
 
 # For ADAPTIVE_GRID
 const b_step = 1000;
@@ -24,21 +24,21 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  20
 
-name = "pi_2_3__3_3_3"
+name = "pi_8__3_3_3_dth"
 N1 = 3;
 N2 = 3;
 N3 = 3;
-const ALPHA = 2*pi/3
+const ALPHA = pi/8
 
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
-const D_ACCURACY =  0.001
+const D_ACCURACY =  0.0001
 const G_NUM = 640
 const SYNC_ERROR =  0.25
 const GStart =  1.01
 const DELTA =  0.025
-G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 2.5:D_ACCURACY:2.8
+G_LIST = range(GStart + DELTA, stop=GStart + DELTA, length=G_NUM)
+D_LIST = 0.05:D_ACCURACY:0.6
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 4;
@@ -58,16 +58,16 @@ end
 
 
 function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR, ALPHA)
-    G1 = GStart;
-    Threads.@threads for k in eachindex(G_LIST)
+    global G1 = GStart;
+    for k in eachindex(G_LIST)
       death_state = [0, 0, 0]
-      G2 = G_LIST[k]
-      G3 = G2 + DELTA;
+      global G2 = G_LIST[k]
+      global G3 = G2 + DELTA;
       a = 10000;
       b = b_init;
       for m in eachindex(D_LIST)        
-        d1 = D_LIST[m]
-        d2 = d1;
+        global d1 = D_LIST[m]
+        global d2 = d1;
         
         tspan = (a, b)
         
@@ -76,13 +76,11 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
 
         prob = ODEProblem(eqn!, y0, tspan, p)
         sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
-        Y = sol.u;
-        T = sol.t;
+        global Y = sol.u;
+        global T = sol.t;
 
         if (k_DELETE_TRANSIENT)
-          index = DELETE_TRANSIENT(Y)
-          start = T[index];
-          y0 = [start, start, start]
+          y0 = Y[end]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
           sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
@@ -90,8 +88,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
           T = sol.t;
         end 
 
-        DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
-        DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
+        global DIFF_SP_12, DIFF_BS_12, ratio_12, err_12, b1, len_1_2 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 1, 2, b)
+        global DIFF_SP_23, DIFF_BS_23, ratio_23, err_23, b2, len_2_3 = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, 2, 3, b)
         b = max(b1, b2);
         err = vcat(err_12, err_23);
         deleteat!(err, 2);
@@ -128,6 +126,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
         @inbounds DEATH[m + (k-1)*D_NUM] = err;
+        return;
       end
     end
 end

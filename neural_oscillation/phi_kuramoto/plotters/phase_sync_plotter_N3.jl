@@ -15,7 +15,7 @@ using Dates
 using PythonPlot
 pygui(true)
 
-alpha_txt = "π/2"
+alpha_txt = "2π/3"
 N1 = 3;
 N2 = 3;
 N3 = 3;
@@ -24,7 +24,7 @@ N3 = 3;
 # points to plot area
 accuracy = 10;
 
-@load "ph_1_2__3_3_3__20240403_1632.jld2" DATA SYNC DEATH
+@load "pi_2_3__3_3_3__20240406_0456.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))

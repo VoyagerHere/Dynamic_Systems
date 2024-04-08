@@ -7,8 +7,8 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "ph_pi_1_2__3_3__20240403_1616"
-alpha_txt = "π/2"
+name = "pi_2_3__3_3__20240403_2119"
+alpha_txt = "2π/3"
 N1 = 3;
 N2 = 3;
 
@@ -61,7 +61,7 @@ for ratio in unique_ratios
         global counter_field+=1
       else
         if ((length(Burst_p) > accuracy))
-          burst_color = cmap_brst(0.2+(1.0/ratio)) # Normalize the length to a value between 0 and 1
+          burst_color = cmap_brst(0.2+(0.5/ratio)) # Normalize the length to a value between 0 and 1
 
           scatter(D_VEC[Burst_p], DELTA_VEC[Burst_p], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1:%$ratio") 
           global counter_field+=1
