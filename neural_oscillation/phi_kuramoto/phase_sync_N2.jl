@@ -266,8 +266,11 @@ end
 function IS_SYNC(DIFF, SYNC_ERROR)
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
-  end
-  return 0;
+end
+
+function DIFF_SPIKES(DIFF, SYNC_ERROR)
+  mn = mean(abs.(DIFF))
+  return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
 function DIFF_SPIKES(DIFF, SYNC_ERROR)

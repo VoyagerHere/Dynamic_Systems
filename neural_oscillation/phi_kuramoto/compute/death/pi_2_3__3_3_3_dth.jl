@@ -32,13 +32,13 @@ const ALPHA = 2*pi/3
 
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
-const D_ACCURACY =  0.001
+const D_ACCURACY =  0.0001
 const G_NUM = 640
 const SYNC_ERROR =  0.25
 const GStart =  1.01
 const DELTA =  0.025
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0:D_ACCURACY:2.0
+D_LIST = 0:D_ACCURACY:1.25
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 4;

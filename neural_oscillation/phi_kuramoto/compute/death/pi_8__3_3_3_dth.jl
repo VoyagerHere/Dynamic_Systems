@@ -38,7 +38,7 @@ const SYNC_ERROR =  0.25
 const GStart =  1.01
 const DELTA =  0.025
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 2.6:D_ACCURACY:2.9
+D_LIST = 2.6:D_ACCURACY:2.75
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 4;

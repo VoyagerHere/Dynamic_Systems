@@ -7,7 +7,7 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "pi_2_3__3_3__20240403_2119"
+name = "pi_2_3__3_3_dth__20240408_1611"
 alpha_txt = "2π/3"
 N1 = 3;
 N2 = 3;

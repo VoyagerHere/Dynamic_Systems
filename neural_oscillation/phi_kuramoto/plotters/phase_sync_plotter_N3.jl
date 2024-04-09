@@ -24,7 +24,7 @@ N3 = 3;
 # points to plot area
 accuracy = 10;
 
-@load "pi_2_3__3_3_3__20240406_0456.jld2" DATA SYNC DEATH
+@load "pi_8__3_3_3_dth__20240408_1703.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
