@@ -7,7 +7,7 @@ using Dates
 using PythonPlot
 pygui(true)
 
-name = "pi_2_3__3_3_dth__20240408_1611"
+name = "pi_2_3__3_3_dth__20240410_0434"
 alpha_txt = "2π/3"
 N1 = 3;
 N2 = 3;
@@ -94,6 +94,7 @@ end
 legend(loc="lower right", fontsize=16, framealpha=1)
 # legend(bbox_to_anchor=(1, 1.015), locolor="upper left", fontsize=12)
 
+xlim(0,  0.4)
 title(L"$n_1$ = %$N1, $n_2$ = %$N2,  $\alpha$ = %$alpha_txt", fontsize=20)
 xlabel(L"d", fontsize=20)
 ylabel(L"\Delta", fontsize=20)

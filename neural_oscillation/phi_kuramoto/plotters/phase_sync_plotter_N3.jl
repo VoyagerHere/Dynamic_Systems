@@ -24,7 +24,7 @@ N3 = 3;
 # points to plot area
 accuracy = 10;
 
-@load "pi_8__3_3_3_dth__20240408_1703.jld2" DATA SYNC DEATH
+@load "pi_2_3__3_3_3_dth__20240408_2205.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -140,7 +140,7 @@ legend(loc="upper left", fontsize=16, framealpha=1)
 # for handle in lgnd.legend_handles
 #   handle.set_markersize([6.0])
 # end
-
+xlim(0,  1.25)
 title(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt", fontsize=20)
 xlabel(L"d", fontsize=20)
 ylabel(L"\Delta", fontsize=20)

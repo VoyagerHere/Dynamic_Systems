@@ -10,7 +10,7 @@ const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = false;
-const k_DELETE_TRANSIENT = false; 
+const k_DELETE_TRANSIENT = true; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
@@ -37,7 +37,7 @@ const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.005
 G_LIST = range(GStart + DELTA, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0.1:D_ACCURACY:3.7
+D_LIST = 5.5:D_ACCURACY:6
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -57,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     for k in eachindex(G_LIST)
       global G2 = G_LIST[k];
       a = 8000;
-      b = 8500;
+      b = 8030;
       for m in eachindex(D_LIST)
         global d = D_LIST[m]
         
@@ -72,9 +72,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         global T = sol.t;
 
         if (k_DELETE_TRANSIENT)
-          index = DELETE_TRANSIENT(Y)
-          start = T[index];
-          y0 = [start, start]
+          y0 = Y[end]
+        
 
           prob = ODEProblem(eqn!, y0, tspan, p)
           sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
