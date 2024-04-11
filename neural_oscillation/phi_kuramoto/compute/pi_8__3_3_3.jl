@@ -111,16 +111,16 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         end
 
         if (sum(err_12) == 0)
-          sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR, ratio);
-          sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR, ratio);
+          sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR, ratio_12);
+          sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR, ratio_12);
         end
         if (sum(err_23) == 0)
-          sync[3] = IS_SYNC(DIFF_BS_23, SYNC_ERROR, ratio);
-          sync[4] = IS_SYNC(DIFF_SP_23, SYNC_ERROR, ratio);
+          sync[3] = IS_SYNC(DIFF_BS_23, SYNC_ERROR, ratio_23);
+          sync[4] = IS_SYNC(DIFF_SP_23, SYNC_ERROR, ratio_23);
         end
         if (sum(err) == 0)
-          sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR, ratio);
-          sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR, ratio);
+          sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR, max(ratio_12,ratio_23));
+          sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR, max(ratio_12,ratio_23));
         end
 
         @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
