@@ -39,8 +39,8 @@ const sigma_MAX = 2.0
 const NUM = 2;
 const PAR_N = [N1, N2];
 const SYNC_ERROR =  0.25;
-sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
-D_LIST = 0:D_ACCURACY:D_MAX
+sigma_LIST = 1.58:sigma_ACCURACY:sigma_MAX
+D_LIST = 0.0821:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 sigma_NUM = length(sigma_LIST)
 
@@ -72,6 +72,7 @@ function chech_condition(y, sigma)
     F2 = 1;
   end
 
+
   return F1, F2
 end
 
@@ -91,7 +92,7 @@ function solver(a, b, sigma, d, y0)
     k3 = eqn(y[i,:] + k2 * h/2, t[i] + h/2, d, PAR_N, F)
     k4 = eqn(y[i,:] + k3 * h, t[i] + h, d, PAR_N, F)
     y[i+1,:] = y[i,:] + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
-    F = chech_condition(y, sigma);
+    F = chech_condition(y[i+1,:], sigma);
   end
   return y, t
 end
@@ -99,8 +100,8 @@ end
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
   for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
-      a = 8000;
-      b = 10000;
+      a = 0;
+      b = 1000;
       for m in eachindex(D_LIST)
         global D = D_LIST[m]
         y0 = [pi/2; pi/2]

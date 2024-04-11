@@ -32,7 +32,7 @@ const G2 = 1.002
 
 g = [G1, G2]
 const D_ACCURACY =  0.0005
-const sigma_ACCURACY =  0.001
+const sigma_ACCURACY =  0.0005
 const D_MAX =  0.2
 const sigma_MAX = 2.0
 
@@ -91,7 +91,7 @@ function solver(a, b, sigma, d, y0)
     k3 = eqn(y[i,:] + k2 * h/2, t[i] + h/2, d, PAR_N, F)
     k4 = eqn(y[i,:] + k3 * h, t[i] + h, d, PAR_N, F)
     y[i+1,:] = y[i,:] + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
-    F = chech_condition(y, sigma);
+    F = chech_condition(y[i+1,:], sigma);
   end
   return y, t
 end
