@@ -11,7 +11,6 @@ const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
 const k_DELETE_TRANSIENT = true; 
-const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
@@ -58,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 9000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
@@ -88,8 +87,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         sync = [0, 0]
 
         if (err == 0)
-          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR, ratio);
+          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR, ratio);
           if (sum(sync) == 0)
             ratio = 0
           end
@@ -106,14 +105,6 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
-
-  if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
-
-    SPIKES1 = SPIKES1[unstbl_1:end];
-    SPIKES2 = SPIKES2[unstbl_2:end];
-  end
 
   len = [length(SPIKES1), length(SPIKES2)];
 
@@ -181,40 +172,6 @@ function FIND_BURST(SPIKES, n)
   return B
 end
 
-function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
-  UNSTBL = 1
-  if err > 0
-    return UNSTBL
-  end
-  B = zeros(Int64, div(length(SPIKES), n))
-  for m in n:n:length(SPIKES)
-    B[div(m, n)] = SPIKES[m]
-  end
-  if length(B) < 2*unstable_err 
-      # err = 1;
-      return UNSTBL
-  end
-  element = B[unstable_err]
-  UNSTBL = findall(SPIKES .== element)
-  if isempty(UNSTBL)
-      UNSTBL = 1
-  end
-  return UNSTBL[1]
-end
-
-function DELETE_TRANSIENT(Y, tol=0.002)
-  len = length(Y);
-  i = 10;
-  while i < len
-      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
-      if ((rel_change_1 < tol) && (rel_change_2 < tol))
-          return i
-      end
-      i += 10;
-  end
-  return 1
-end
 
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
@@ -261,7 +218,10 @@ function FIND_DIFF(A1, A2, T)
     return DIFF
 end
 
-function IS_SYNC(DIFF, SYNC_ERROR)
+function IS_SYNC(DIFF, SYNC_ERROR, ratio)
+  if ((ratio == 1) &&  DIFF_SPIKES(DIFF, SYNC_ERROR))
+    return 2;
+  end
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
   end

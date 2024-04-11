@@ -26,7 +26,7 @@ const SPIKE_ERROR =  0
 name = "pi_2_3__3_3_dth"
 N1 = 3
 N2 = 3
-const ALPHA = 2pi/3
+const ALPHA = 2*pi/3
 
 
 const NUM = 2;
@@ -87,8 +87,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         sync = [0, 0]
 
         if (err == 0)
-          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR, ratio);
+          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR, ratio);
           if (sum(sync) == 0)
             ratio = 0
           end
@@ -260,7 +260,10 @@ function FIND_DIFF(A1, A2, T)
     return DIFF
 end
 
-function IS_SYNC(DIFF, SYNC_ERROR)
+function IS_SYNC(DIFF, SYNC_ERROR, ratio)
+  if ((ratio == 1) &&  DIFF_SPIKES(DIFF, SYNC_ERROR))
+    return 2;
+  end
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
   end
@@ -272,13 +275,13 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G1, G2, D, PAR_N)
-    Y = [mod.(y, 2 * pi) for y in Y]
+function DRAW(T, Y, G1, G2, d, PAR_N, alpha_txt)
+  Y = [mod.(y, 2 * pi) for y in Y]
     n1 = PAR_N[1];
     n2 = PAR_N[2];
     plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
     plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
-    title!(L"d = %$D")
+    title!(L"\alpha = %$alpha_txt, d = %$d")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")

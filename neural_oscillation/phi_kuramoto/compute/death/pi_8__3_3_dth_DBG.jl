@@ -11,7 +11,7 @@ const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = false;
 const k_DELETE_TRANSIENT = true; 
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_UNSTABLE = true;
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
@@ -26,7 +26,7 @@ const SPIKE_ERROR =  0
 name = "pi_8__3_3_dth"
 N1 = 3
 N2 = 3
-const ALPHA = 2*pi/3
+const ALPHA = 2*pi/
 
 
 const NUM = 2;
@@ -37,7 +37,7 @@ const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.005
 G_LIST = range(GStart + DELTA, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0.01:D_ACCURACY:0.5
+D_LIST = 0:D_ACCURACY:0.5
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -57,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     for k in eachindex(G_LIST)
       global G2 = G_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 9000;
       for m in eachindex(D_LIST)
         global d = D_LIST[m]
         
@@ -88,8 +88,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         sync = [0, 0]
 
         if (err == 0)
-          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR, ratio);
+          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR, ratio);
           if (sum(sync) == 0)
             ratio = 0
           end
@@ -107,14 +107,6 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
-
-  if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
-
-    SPIKES1 = SPIKES1[unstbl_1:end];
-    SPIKES2 = SPIKES2[unstbl_2:end];
-  end
 
   len = [length(SPIKES1), length(SPIKES2)];
 
@@ -262,7 +254,10 @@ function FIND_DIFF(A1, A2, T)
     return DIFF
 end
 
-function IS_SYNC(DIFF, SYNC_ERROR)
+function IS_SYNC(DIFF, SYNC_ERROR, ratio)
+  if ((ratio == 1) &&  DIFF_SPIKES(DIFF, SYNC_ERROR))
+    return 2;
+  end
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
   end

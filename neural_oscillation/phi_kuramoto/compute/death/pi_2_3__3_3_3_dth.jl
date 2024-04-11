@@ -32,7 +32,7 @@ const ALPHA = 2*pi/3
 
 const NUM = 3;
 const PAR_N = [N1, N2, N3];
-const D_ACCURACY =  0.0001
+const D_ACCURACY =  0.001
 const G_NUM = 640
 const SYNC_ERROR =  0.25
 const GStart =  1.01
@@ -111,16 +111,16 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         end
 
         if (sum(err_12) == 0)
-          sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS_12, SYNC_ERROR, ratio);
+          sync[2] = IS_SYNC(DIFF_SP_12, SYNC_ERROR, ratio);
         end
         if (sum(err_23) == 0)
-          sync[3] = IS_SYNC(DIFF_BS_23, SYNC_ERROR);
-          sync[4] = IS_SYNC(DIFF_SP_23, SYNC_ERROR);
+          sync[3] = IS_SYNC(DIFF_BS_23, SYNC_ERROR, ratio);
+          sync[4] = IS_SYNC(DIFF_SP_23, SYNC_ERROR, ratio);
         end
         if (sum(err) == 0)
-          sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR);
-          sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR);
+          sync[5] = IS_SYNC([DIFF_BS_12; DIFF_BS_23], SYNC_ERROR, ratio);
+          sync[6] = IS_SYNC([DIFF_SP_12; DIFF_SP_23], SYNC_ERROR, ratio);
         end
 
         @inbounds DATA[m + (k-1)*D_NUM] = [d1, d2, ratio_12, ratio_23, delta]
@@ -134,14 +134,6 @@ function SYNC_PAIR(T, Y, PAR_N, error, ind1, ind2, b)
   Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,ind1], PAR_N[ind1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,ind2], PAR_N[ind2])
-
-  if (k_DELETE_UNSTABLE)
-    unstbl_1 = DELETE_UNSTBL(SPIKES1, err1, PAR_N[1], error)
-    unstbl_2 = DELETE_UNSTBL(SPIKES2, err2, PAR_N[2], error)
-
-    SPIKES1 = SPIKES1[unstbl_1:end];
-    SPIKES2 = SPIKES2[unstbl_2:end];
-  end
 
   err = [err1, err2];
 
@@ -198,40 +190,6 @@ function FIND_BURST(SPIKES, n)
   return B
 end
 
-function DELETE_UNSTBL(SPIKES, err, n, unstable_err)
-  UNSTBL = 1
-  if err == 1
-      return UNSTBL
-  end
-  B = zeros(Int64, div(length(SPIKES), n))
-  for m in n:n:length(SPIKES)
-    B[div(m, n)] = SPIKES[m]
-  end
-  if length(B) < 2*unstable_err
-      return UNSTBL
-  end
-  element = B[unstable_err]
-  UNSTBL = findall(SPIKES .== element)
-  if isempty(UNSTBL)
-      UNSTBL = 1
-  end
-  return UNSTBL[1]
-end
-
-function DELETE_TRANSIENT(Y, tol=0.002)
-  len = length(Y);
-  i = 10;
-  while i < len
-      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
-      rel_change_3 = abs((Y[i][3] - Y[i-1][3]) / Y[i-1][3])
-      if ((rel_change_1 < tol) && (rel_change_2 < tol) && (rel_change_3 < tol))
-          return i
-      end
-      i += 10;
-  end
-  return 1
-end
 
 function FIND_NEAR_POINTS(POINTS)
   i = 1;
@@ -278,7 +236,10 @@ function FIND_DIFF(A1, A2, T)
     return DIFF
 end
 
-function IS_SYNC(DIFF, SYNC_ERROR)
+function IS_SYNC(DIFF, SYNC_ERROR, ratio)
+  if ((ratio == 1) &&  DIFF_SPIKES(DIFF, SYNC_ERROR))
+    return 2;
+  end
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
   end
