@@ -10,7 +10,7 @@ const k_ENABLE_ADAPTIVE_GRID = true;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false; 
+const k_DELETE_TRANSIENT = true; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
@@ -81,9 +81,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, NUM, G_LIST, D_LIST, SPIKE_ERROR,
         T = sol.t;
 
         if (k_DELETE_TRANSIENT)
-          index = DELETE_TRANSIENT(Y)
-          start = T[index];
-          y0 = [start, start, start]
+          y0 = Y[end]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
           sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)

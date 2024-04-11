@@ -15,7 +15,7 @@ using Dates
 using PythonPlot
 pygui(true)
 
-alpha_txt = "2π/3"
+alpha_txt = "π/8"
 N1 = 3;
 N2 = 3;
 N3 = 3;
@@ -24,7 +24,7 @@ N3 = 3;
 # points to plot area
 accuracy = 10;
 
-@load "pi_2_3__3_3_3_dth__20240408_2205.jld2" DATA SYNC DEATH
+@load "pi_8__3_3_3_dth__20240409_2159.jld2" DATA SYNC DEATH
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -68,23 +68,23 @@ QUASI_PERIODIC = intersect(
   findall(x -> x ==  0, SYNC_MATR[:,6]))
 
 
-  if(length(QUASI_PERIODIC) > accuracy)
-    scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color="lavender", s=size_sc, label=L"$S$%$counter_field: Q-P")
-    global counter_field+=1;
-  end
-  if (length(DEAD1) != length(DEAD2))
-    if(length(DEAD1) > accuracy)
-      scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color=cmap_dth(0.4), label=L"$S$%$counter_field: D $\varphi_1$")
-      global counter_field+=1;
-    end
-  end
+  # if(length(QUASI_PERIODIC) > accuracy)
+  #   scatter(D_VEC_1[QUASI_PERIODIC], DELTA_VEC[QUASI_PERIODIC], color="lavender", s=size_sc, label=L"$S$%$counter_field: Q-P")
+  #   global counter_field+=1;
+  # end
+  # if (length(DEAD1) != length(DEAD2))
+  #   if(length(DEAD1) > accuracy)
+  #     scatter(D_VEC_1[DEAD1], DELTA_VEC[DEAD1], s=size_sc, color=cmap_dth(0.4), label=L"$S$%$counter_field: D $\varphi_1$")
+  #     global counter_field+=1;
+  #   end
+  # end
   
-  if (length(DEAD2) != length(DEAD3))
-    if(length(DEAD2) > accuracy)
-      scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
-      global counter_field+=1;
-    end
-  end
+  # if (length(DEAD2) != length(DEAD3))
+  #   if(length(DEAD2) > accuracy)
+  #     scatter(D_VEC_1[DEAD2], DELTA_VEC[DEAD2], s=size_sc, color=cmap_dth(0.6), label=L"$S$%$counter_field: D $\varphi_1, \varphi_2$")
+  #     global counter_field+=1;
+  #   end
+  # end
 
   
   if(length(DEAD_ALL) > accuracy)
@@ -92,15 +92,15 @@ QUASI_PERIODIC = intersect(
     global counter_field+=1;
   end
 
-# if (Burst_Sync_12 != Spike_Sync_12)
-#   if(length(Burst_Sync_12) > accuracy)
-#     burst_color = cmap_brst(0.4)
-#     scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1-2")
-#     global counter_field+=1;
-#   end
-# end
+if (Burst_Sync_12 != Spike_Sync_12)
+  if(length(Burst_Sync_12) > accuracy)
+    burst_color = cmap_brst(0.8)
+    scatter(D_VEC_1[Burst_Sync_12], DELTA_VEC[Burst_Sync_12], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 1-2")
+    global counter_field+=1;
+  end
+end
 if(length(Spike_Sync_12) > accuracy)
-  spike_color = cmap_sp(0.4)
+  spike_color = cmap_sp(0.8)
   scatter(D_VEC_1[Spike_Sync_12], DELTA_VEC[Spike_Sync_12], s=size_sc, color=spike_color, label=L"$S$%$counter_field: SS 1-2")
   global counter_field+=1;
 end
@@ -108,27 +108,27 @@ end
 if (Burst_Sync_23 != Spike_Sync_23)
   
   if(length(Burst_Sync_23) > accuracy)
-    burst_color = cmap_brst(0.6)
+    burst_color = cmap_brst(0.4)
     scatter(D_VEC_1[Burst_Sync_23], DELTA_VEC[Burst_Sync_23], s=size_sc, color=burst_color, label=L"$S$%$counter_field: BS 2-3")
     global counter_field+=1;
   end
 end
 if(length(Spike_Sync_23) > accuracy)
-  spike_color = cmap_sp(0.6)
+  spike_color = cmap_sp(0.4)
   scatter(D_VEC_1[Spike_Sync_23], DELTA_VEC[Spike_Sync_23], s=size_sc, color=spike_color, label=L"$S$%$counter_field: SS 2-3")
   global counter_field+=1;
 end
 
 if (Burst_Sync_ALL != Spike_Sync_ALL)
   if(length(Burst_Sync_ALL) > accuracy)
-    burst_color = cmap_brst(0.8)
-    scatter(D_VEC_1[Burst_Sync_ALL], DELTA_VEC[Burst_Sync_ALL], s=size_sc, color=burst_color, label=L"$S$%$counter_field: GBS")
+    burst_color = cmap_brst(0)
+    scatter(D_VEC_1[Burst_Sync_ALL], DELTA_VEC[Burst_Sync_ALL], s=size_sc, color=burst_color, label=L"$S$%$counter_field: GBS A-P")
     global counter_field+=1;
   end
 end
 if(length(Spike_Sync_ALL) > accuracy)
-  spike_color = cmap_sp(0.8)
-  scatter(D_VEC_1[Spike_Sync_ALL], DELTA_VEC[Spike_Sync_ALL], s=size_sc, color=spike_color, label=L"$S$%$counter_field: GBS")
+  spike_color = cmap_sp(0)
+  scatter(D_VEC_1[Spike_Sync_ALL], DELTA_VEC[Spike_Sync_ALL], s=size_sc, color=spike_color, label=L"$S$%$counter_field: GSS")
   global counter_field+=1;
 end
 
@@ -140,7 +140,7 @@ legend(loc="upper left", fontsize=16, framealpha=1)
 # for handle in lgnd.legend_handles
 #   handle.set_markersize([6.0])
 # end
-xlim(0,  1.25)
+xlim(2.62,  2.7)
 title(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt", fontsize=20)
 xlabel(L"d", fontsize=20)
 ylabel(L"\Delta", fontsize=20)

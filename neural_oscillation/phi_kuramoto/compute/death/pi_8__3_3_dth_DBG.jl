@@ -37,7 +37,7 @@ const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.005
 G_LIST = range(GStart + DELTA, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 5.5:D_ACCURACY:6
+D_LIST = 0.01:D_ACCURACY:0.5
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -57,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     for k in eachindex(G_LIST)
       global G2 = G_LIST[k];
       a = 8000;
-      b = 8030;
+      b = 10000;
       for m in eachindex(D_LIST)
         global d = D_LIST[m]
         
@@ -270,17 +270,17 @@ function IS_SYNC(DIFF, SYNC_ERROR)
 end
 
 function DIFF_SPIKES(DIFF, SYNC_ERROR)
-  mn = mean(abs.(DIFF))
+  global mn = mean(abs.(DIFF))
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DRAW(T, Y, G1, G2, D, PAR_N)
+function DRAW(T, Y, G1, G2, d, PAR_N, alpha_txt)
     Y = [mod.(y, 2 * pi) for y in Y]
     n1 = PAR_N[1];
     n2 = PAR_N[2];
     plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
     plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
-    title!(L"d = %$D")
+    title!(L"\alpha = %$alpha_txt, d = %$d")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")

@@ -37,7 +37,7 @@ const SYNC_ERROR =  0.25;
 const GStart =  1.01
 const DELTA =  0.012
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0:D_ACCURACY:0.25
+D_LIST = 0:D_ACCURACY:0.2
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -57,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       a = 8000;
-      b = 8500;
+      b = 9000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
