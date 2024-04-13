@@ -20,8 +20,8 @@ const DATA_TAKE_ERROR = 0.25;
 const ADAPTIVE_SET_ERROR = 10;
 const SPIKE_ERROR =  0
 
-name = "pi_2_3__3_3_3"
-const ALPHA = 2*pi / 3
+name = "fr_pi_8__3_3_3_pt2"
+const ALPHA = pi / 8
 N1 = 3
 N2 = 3
 N3 = 3
@@ -29,10 +29,10 @@ N3 = 3
 
 const NUM = 3;
 global PAR_N = [N1, N2, N3];
-const D_MAX =  0.02
+const D_MAX =  0.05
 const D_ACCURACY =  0.00001
 const GStart =  1.01
-const DELTA =  0.005
+const DELTA =  0.02
 
 G1 = 1.01;
 G2 = G1 + DELTA;
@@ -62,7 +62,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, NUM, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
 
   a = 8000;
-  b = 18000;
+  b = 10000;
 
   for m in eachindex(D_LIST)
     global d1 = D_LIST[m]

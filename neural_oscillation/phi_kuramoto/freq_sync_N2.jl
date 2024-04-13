@@ -15,21 +15,20 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "fr_pi_8__2_2"
-const ALPHA = pi / 8
+name = "fr_pi_2_3__3_3__pt2" 
+const ALPHA = 2*pi / 3
 N1 = 3
 N2 = 3
-const D_MAX =  0.02
 const D_ACCURACY =  0.00001
 const GStart =  1.01
-const DELTA = 0.001;
+const DELTA = 0.012;
 
 
 
 const NUM = 2;
 global PAR_N = [N1, N2];
 
-D_LIST = 0:D_ACCURACY:D_MAX
+D_LIST = 0:D_ACCURACY:0.2
 D_NUM = length(D_LIST)
 
 G1 = 1.01;
@@ -49,7 +48,7 @@ end
 function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
   num_of_iterations = length(D_LIST)
   a = 8000;
-  b = 10000;
+  b = 13000;
 
   for m in eachindex(D_LIST)    
     tspan = (a, b)
@@ -65,9 +64,7 @@ function FREQ_SYNC(DATA, G1, G2, PAR_N, D_LIST, ALPHA)
     global T = sol.t;
 
     if (k_DELETE_TRANSIENT)
-      index = DELETE_TRANSIENT(Y)
-      start = T[index];
-      y0 = [start, start]
+      y0 = Y[end]
 
       prob = ODEProblem(eqn!, y0, tspan, p)
       sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
@@ -166,21 +163,6 @@ function handle_errors(err1::Bool, err2::Bool)
   else
       return  0
   end
-end
-
-
-function DELETE_TRANSIENT(Y, tol=0.002)
-  len = length(Y);
-  i = 10;
-  while i < len
-      rel_change_1 = abs((Y[i][1] - Y[i-1][1]) / Y[i-1][1])
-      rel_change_2 = abs((Y[i][2] - Y[i-1][2]) / Y[i-1][2])
-      if ((rel_change_1 < tol) && (rel_change_2 < tol))
-          return i
-      end
-      i += 10;
-  end
-  return 1
 end
 
 

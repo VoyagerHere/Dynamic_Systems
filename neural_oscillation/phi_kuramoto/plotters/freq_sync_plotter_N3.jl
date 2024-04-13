@@ -7,12 +7,12 @@ using Plots
 gr()
 
 
-alpha_txt = "2π/3"
+alpha_txt = "π/8"
+delta = 0.02
 N1 = 3;
 N2 = 3;
 N3 = 3;
-name = "\Omega_{1,2}/\Omega_{2,3}"
-@load "pi_2_3__3_3_3__20240327_0602.jld2" DATA W DEATH
+@load "fr_pi_8__3_3_3_pt2__20240412_2017.jld2" DATA W DEATH
  
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -44,26 +44,26 @@ rectangle(w, h, x, y) = Shape(x .+ [0,w,w,0], y .+ [0,0,h,h])
 
 
 if length(GOOD_1_2) > 0
-  plot(D_VEC[GOOD_1_2], RATIO_B_1_2[GOOD_1_2], label=L"\Omega_{b}^{1}/\Omega_{b}^{2}", c = "azure")
+  plot(D_VEC[GOOD_1_2], RATIO_B_1_2[GOOD_1_2], label=L"\Omega_{b}^{1}/\Omega_{b}^{2}", c = "magenta")
   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
-if length(GOOD_1_2) > 0
-  plot(D_VEC[GOOD_1_2], RATIO_B_1_2[GOOD_1_2], label=L"\Omega_{b}^{2}/\Omega_{b}^{3}", c = "aqua")
-  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
+if length(GOOD_2_3) > 0
+  plot!(D_VEC[GOOD_2_3], RATIO_B_2_3[GOOD_2_3], label=L"\Omega_{b}^{2}/\Omega_{b}^{3}", c = "blue")
+  # scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
 end
 
 
-if length(DEAD1) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey24", label = L"D $\varphi_1$")
-  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
-end
-if length(DEAD2) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD2])-minimum(D_VEC[DEAD2]),1,minimum(D_VEC[DEAD2]),0), opacity=.5, color = colorant"grey34", label = L"D $\varphi_1, \varphi_2$")
-  scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
-end
-if length(DEAD3) > 0
-  plot!(rectangle(maximum(D_VEC[DEAD3])-minimum(D_VEC[DEAD3]),1,minimum(D_VEC[DEAD3]),0), opacity=1, color = colorant"black",  label = L"D $\varphi_1, \varphi_2, \varphi_3$")
-end
+# if length(DEAD1) > 0
+#   plot!(rectangle(maximum(D_VEC[DEAD1])-minimum(D_VEC[DEAD1]),1,minimum(D_VEC[DEAD1]),0), opacity=.5, color = colorant"grey24", label = L"D $\varphi_1$")
+#   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
+# end
+# if length(DEAD2) > 0
+#   plot!(rectangle(maximum(D_VEC[DEAD2])-minimum(D_VEC[DEAD2]),1,minimum(D_VEC[DEAD2]),0), opacity=.5, color = colorant"grey34", label = L"D $\varphi_1, \varphi_2$")
+#   scatter!([minimum(D_VEC)],[0], label=" ", ms=0, mc=:white, msc=:white)
+# end
+# if length(DEAD3) > 0
+#   plot!(rectangle(maximum(D_VEC[DEAD3])-minimum(D_VEC[DEAD3]),1,minimum(D_VEC[DEAD3]),0), opacity=1, color = colorant"black",  label = L"D $\varphi_1, \varphi_2, \varphi_3$")
+# end
 
 # # Calculate center points for each area
 # center_DEAD1 = (minimum(D_VEC[DEAD1]) + maximum(D_VEC[DEAD1])) /  2
@@ -74,10 +74,11 @@ end
 # annotate!(center_DEAD3,  0.5, text("Death3", :center,  5))
 
 
-title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt")
-# ylims!(0,  1)
-#  xlims!(0,  0.03)
+title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt, Δ = %$delta")
+ylims!(0.4,  1)
+#  xlims!(0.15,  1.2)
 xlabel!(L"d", guidefontsize=16)
-ylabel!(L"%$name", guidefontsize=16)
+ylabel!(L"\Omega_{1,2}/\Omega_{2,3}", guidefontsize=16)
+
 plot!(legendfontsize=10, legend=:outertopright) 
-savefig("freq_plot.png")
+savefig("a.png")
