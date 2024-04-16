@@ -17,8 +17,8 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
-const b_step = 1000;
-const ADAPTIVE_SET_ERROR = 10;
+const b_step = 2000;
+const ADAPTIVE_SET_ERROR = 20;
 
 # For DELETE_UNSTABLE
 const SPIKE_ERROR = 0
@@ -32,7 +32,7 @@ const G2 = 1.002
 
 g = [G1, G2]
 const D_ACCURACY =  0.0005
-const sigma_ACCURACY =  0.0005
+const sigma_ACCURACY =  0.001
 const D_MAX =  0.2
 const sigma_MAX = 2.0
 
@@ -100,7 +100,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
   Threads.@threads for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 14000;
       for m in eachindex(D_LIST)
         D = D_LIST[m]
         y0 = [pi/2; pi/2]

@@ -33,14 +33,14 @@ const G2 = 1.002
 g = [G1, G2]
 const D_ACCURACY =  0.0005
 const sigma_ACCURACY =  0.0005
-const D_MAX =  2.0
+const D_MAX =  0.2
 const sigma_MAX = 2.0
 
 const NUM = 2;
 const PAR_N = [N1, N2];
 const SYNC_ERROR =  0.25;
-sigma_LIST = 1.58:sigma_ACCURACY:sigma_MAX
-D_LIST = 0.0821:D_ACCURACY:D_MAX
+sigma_LIST = 1:sigma_ACCURACY:sigma_MAX
+D_LIST = 0.1:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 sigma_NUM = length(sigma_LIST)
 
@@ -72,7 +72,6 @@ function chech_condition(y, sigma)
     F2 = 1;
   end
 
-
   return F1, F2
 end
 
@@ -99,14 +98,14 @@ end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
   for k in eachindex(sigma_LIST)
-      sigma = sigma_LIST[k];
-      a = 0;
-      b = 1000;
+      global sigma = sigma_LIST[k];
+      a = 8000;
+      b = 14000;
       for m in eachindex(D_LIST)
         global D = D_LIST[m]
         y0 = [pi/2; pi/2]
         global Y, T = solver(a, b, sigma, D, y0)
-        DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+        global DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         b = copy(b_new);
         sync = [0, 0]

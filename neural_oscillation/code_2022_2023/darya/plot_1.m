@@ -1,12 +1,12 @@
-d =  0.0821;
-sigma = 1.58;
+d =  0.1;
+sigma = 1;
 
 n1 = 1;
 n2 = 1;
 n = [n1; n2];
 
 a = 0;
-b = 1000;
+b = 6000;
 h = 1/100;
 T = a:h:(b-h);
 T = transpose(T);
@@ -31,7 +31,6 @@ draw(T, Y, d, sigma);
 
 function [dy_dt, F] = eqn(~, y, d, no, sigma, F)
     y = transpose(y);
-    disp(F);
     yy = mod(y, 2*pi);
     g = [1.001; 1.002];
     f = g - sin(y ./ no);
