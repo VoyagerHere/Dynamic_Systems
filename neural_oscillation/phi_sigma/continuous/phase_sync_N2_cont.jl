@@ -28,13 +28,14 @@ N1 = 1
 N2 = 1
 
 const G1 = 1.01
-const DELTA = 0.05
+const DELTA = 0.000005
+# const DELTA = 0.05
 const G2 = 1.01+DELTA
 g = [G1, G2]
 const D_ACCURACY =  0.005
 const sigma_ACCURACY =  0.005
-const D_MAX =  1.5
-const sigma_MAX = pi
+const D_MAX =  0.1
+const sigma_MAX = 1
 
 const NUM = 2;
 const K = -500

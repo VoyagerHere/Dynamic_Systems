@@ -31,15 +31,17 @@ function DELETE_TRANSIENT(Y, tol=0.002)
   return 1
 end
 
-n = [1, 1];
-d = 0.1
-sigma = pi/2
+n = [3, 3];
+d = 0.01
+sigma = 1/2
 tspan = (8000, 9000)
 
 y0 = [0, 0]
 
 # const DELTA =  0.05
-const DELTA = 0.000005
+# const DELTA = 0.000005
+DELTA = 0.000005
+
 G1 = 1.01;
 G2 = G1 + DELTA;
 

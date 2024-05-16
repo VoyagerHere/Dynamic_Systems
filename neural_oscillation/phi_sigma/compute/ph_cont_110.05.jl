@@ -18,27 +18,32 @@ const DATA_TAKE_ERROR = 0.25;
 
 # For ADAPTIVE_GRID
 const b_step = 2000;
-const ADAPTIVE_SET_ERROR = 20;
+const ADAPTIVE_SET_ERROR = 10;
 
 # For DELETE_UNSTABLE
-const SPIKE_ERROR = 0
+const SPIKE_ERROR =  0
 
-name = "ph_discr"
+name = "ph_cont_"
 N1 = 1 
 N2 = 1
 
-const G1 = 1.001
-const G2 = 1.002
-
+const G1 = 1.01
+# const DELTA = 0.000005
+const DELTA = 0.05
+const G2 = 1.01+DELTA
 g = [G1, G2]
-const D_ACCURACY =  0.0005
-const sigma_ACCURACY =  0.001
-const D_MAX =  0.2
-const sigma_MAX = 2.0
+const D_ACCURACY =  0.005
+const sigma_ACCURACY =  0.005
+const D_MAX =  0.1
+const sigma_MAX = 1
 
 const NUM = 2;
+const K = -500
 const PAR_N = [N1, N2];
 const SYNC_ERROR =  0.25;
+
+
+
 sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
@@ -48,63 +53,42 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-function eqn(y, t, d, no, F)
-  f = g - sin.(y ./ no)
-  exch = d * [F[2], F[1]]
-  dy_dt = f - exch
-  return dy_dt
-end
-
-function chech_condition(y, sigma)
-  y[1] = mod.(y[1], 2 * pi)
-  y[2] = mod.(y[2], 2 * pi)
-
-
-  if ((y[1] > pi/2 - sigma) && (y[1] < pi/2 + sigma))
-    F1 =  0;
-  else
-    F1 = 1;
-  end
-
-  if ((y[2] > pi/2 - sigma) && (y[2] < pi/2 + sigma))
-    F2 =  0;
-  else
-    F2 = 1;
-  end
-
-  return F1, F2
-end
-
-
-function solver(a, b, sigma, d, y0)
-  h = 1/100
-  t = a:h:(b-h)
-  global F = [0, 0]
-  n = length(t)
-  y = zeros((n, length(y0)))
-  y[1,:] = y0
-
-  for i in 1:n-1
-    h = t[i+1] - t[i]
-    k1 = eqn(y[i,:], t[i], d, PAR_N, F)
-    k2 = eqn(y[i,:] + k1 * h/2, t[i] + h/2, d, PAR_N, F)
-    k3 = eqn(y[i,:] + k2 * h/2, t[i] + h/2, d, PAR_N, F)
-    k4 = eqn(y[i,:] + k3 * h, t[i] + h, d, PAR_N, F)
-    y[i+1,:] = y[i,:] + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
-    F = chech_condition(y[i+1,:], sigma);
-  end
-  return y, t
+function eqn!(du, u, p, t)#u - это тета
+  D, sigma, g, n = p
+  f = g .- sin.(u ./ n)
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  du .= f - D*exch
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
-  Threads.@threads for k in eachindex(sigma_LIST)
+    Threads.@threads for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       a = 8000;
-      b = 14000;
+      b = 12000;
       for m in eachindex(D_LIST)
         D = D_LIST[m]
-        y0 = [pi/2; pi/2]
-        Y, T = solver(a, b, sigma, D, y0)
+        
+        tspan = (a, b)
+        
+        p = (D, sigma, [G1, G2],  PAR_N);
+        y0 = [0; 0]
+
+        prob = ODEProblem(eqn!, y0, tspan, p)
+        sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+        Y = sol.u;
+        T = sol.t;
+
+        if (k_DELETE_TRANSIENT)
+          index = DELETE_TRANSIENT(Y)
+          start = T[index];
+          y0 = [start, start]
+
+          prob = ODEProblem(eqn!, y0, tspan, p)
+          sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
+          Y = sol.u;
+          T = sol.t;
+        end 
+
         DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         b = copy(b_new);
@@ -125,6 +109,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 end
 
 function SYNC_PAIR(T, Y, PAR_N, error, b)
+  Y = reduce(vcat,transpose.(Y))
   SPIKES1, err1 = FIND_SPIKES(Y[:,1], PAR_N[1])
   SPIKES2, err2 = FIND_SPIKES(Y[:,2], PAR_N[2])
 
@@ -148,7 +133,7 @@ function SYNC_PAIR(T, Y, PAR_N, error, b)
 
   BURSTS1 = FIND_BURST(SPIKES1, PAR_N[1])
   BURSTS2 = FIND_BURST(SPIKES2, PAR_N[2])
-  
+
   k_DEBUG_PRINT && println("Bursts in 1: ", length(BURSTS1))
   k_DEBUG_PRINT && println("Bursts in 2: ", length(BURSTS2))
 
@@ -305,7 +290,6 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   xlabel!(L"t")
   ylabel!(L"\varphi")
 end
-
 
 @time  PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 

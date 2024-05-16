@@ -10,7 +10,7 @@ pygui(true)
 N1 = 1;
 N2 = 1;
 
-@load "cont_1__20240304_1934.jld2" DATA SYNC
+@load "ph_discr__20240417_2310.jld2" DATA SYNC
 
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))

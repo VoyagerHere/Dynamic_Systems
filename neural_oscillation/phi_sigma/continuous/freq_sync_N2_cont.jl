@@ -15,32 +15,34 @@ const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
 
-name = "fr_cont_"
-N1 = 1 
-N2 = 1
 
-const G1 = 1.01
-const DELTA = 0.05
-const G2 = 1.01+DELTA
+N1 = 3
+N2 = 3
+# DELTA = 0.000005
+DELTA = 0.05
+# DELTA = 0.5
+SIGMA_FIXED = 1/2;
+const D_MAX =  0.2
+
+
+name = "fr_cont_110.05__20240516_1754.jld2"
+
+const G1 = 1.001
+const G2 = G1 + DELTA
 g = [G1, G2]
-const D_ACCURACY =  0.005
-const sigma_ACCURACY =  0.005
-const D_MAX =  1.5
-const sigma_MAX = pi
+const D_ACCURACY =  0.0005
 
 
 K = -500
 const NUM = 2;
 const PAR_N = [N1, N2];
-
-
-sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
+const SYNC_ERROR = 0.25;
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
-sigma_NUM = length(sigma_LIST)
 
-DATA = [zeros(4) for _ in 1:(D_NUM*sigma_NUM)]
-W = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
+
+DATA = [zeros(4) for _ in 1:(D_NUM)]
+W = [zeros(2) for _ in 1:(D_NUM)]
 
 
 function eqn!(du, u, p, t)#u - это тета
@@ -51,14 +53,14 @@ function eqn!(du, u, p, t)#u - это тета
 end
 
 
-function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
-  Threads.@threads  for k in eachindex(sigma_LIST)
-    sigma = sigma_LIST[k];
+function FREQ_SYNC(DATA, PAR_N, D_LIST)
+    sigma = SIGMA_FIXED;
     a = 8000;
-    b = 10000;
+    b = 18000;
 
     for m in eachindex(D_LIST)    
       D = D_LIST[m]
+      println(D)
       y0 = [0; 0]
       p = (D, sigma, [G1, G2],  PAR_N);
       tspan = (a, b)
@@ -74,13 +76,14 @@ function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
       ratio_b = w_b[1] / w_b[2];
 
       if (err != 0)
-        DATA[m] = [D, sigma,  -err, -err]
+        DATA[m] = [D,  -err, -err]
         continue;
       end
-      DATA[m + (k-1)*D_NUM] = [D, sigma, ratio_s, ratio_b]
-      W[m] = vcat(w_s, w_b)
+        DATA[m] = [D, ratio_s, ratio_b]
+        W[m] = vcat(w_s, w_b)
+        # it = m + (k-1)*D_NUM
+        # println("Iteration $it of $num_of_iterations")
       end
-    end
 end
 
 function SYNC_PAIR(T, Y, PAR_N)
@@ -209,7 +212,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST);
+FREQ_SYNC(DATA, PAR_N, D_LIST);
 
 
 if k_IS_SAVE_DATA 

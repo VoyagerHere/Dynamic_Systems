@@ -63,12 +63,13 @@ function draw(T, Y, d, sigma)
 end
 
 
-d =  0.0821
-sigma = 1.58
+d =  0.1
+sigma = 1/2
 n1 = 1
 n2 = 1
 const G1 = 1.001
-const G2 = 1.002
+DELTA = 5.0e-6
+const G2 = G1+DELTA
 N1 = 1 
 N2 = 1
 
