@@ -33,8 +33,8 @@ const DELTA = 0.000005
 const G2 = 1.01+DELTA
 
 g = [G1, G2]
-const D_ACCURACY =  0.005
-const sigma_ACCURACY =  0.005
+const D_ACCURACY =  0.0001
+const sigma_ACCURACY =  0.0005
 const D_MAX =  0.1
 const sigma_MAX = 1
 
