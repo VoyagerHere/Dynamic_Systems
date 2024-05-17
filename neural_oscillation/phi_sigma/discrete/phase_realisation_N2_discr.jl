@@ -2,14 +2,22 @@ using Plots
 
 
 
-
-
-function eqn(y, t, d, no, F)
+function eqn_sin(y, t, d, no, F)
   f = g - sin.(y ./ no)
   exch = d * [F[2], F[1]]
   dy_dt = f - exch
   return dy_dt
 end
+
+
+function eqn_cos(y, t, d, no, F)
+  f = g - cos.(y ./ no)
+  exch = d * [F[2], F[1]]
+  dy_dt = f - exch
+  return dy_dt
+end
+
+eqn = eqn_cos;
 
 function chech_condition(y, sigma)
   y[1] = mod.(y[1], 2 * pi)
@@ -63,12 +71,17 @@ function draw(T, Y, d, sigma)
 end
 
 
-d =  0.1
+d =  0.0005
 sigma = 1/2
 n1 = 1
 n2 = 1
 const G1 = 1.001
-DELTA = 5.0e-6
+
+# DELTA = 0.000005
+# DELTA = 0.05
+DELTA = 0.5
+
+
 const G2 = G1+DELTA
 N1 = 1 
 N2 = 1

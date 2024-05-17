@@ -8,12 +8,12 @@ gr()
 
 
 # delta =  5.0e-6
-# delta = 0.05
-delta = 0.5
+delta = 0.05
+# delta = 0.5
 N1 = 1;
 N2 = 1;
 sigma_txt = "1/2";
-name = "fr_dicr_110.5__20240516_1630"
+name = "fr_dicr_cos110.05__20240517_0536"
 @load "$name.jld2" DATA
 
 
@@ -60,7 +60,7 @@ end
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $\sigma$ = %$sigma_txt, Δ = %$delta")
 # ylims!(0.75,  1.01)
-# xlims!(0, 0.027)
+xlims!(0, 0.002)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"\Omega_{1}/\Omega_{2}", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 
