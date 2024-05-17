@@ -16,16 +16,16 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 
-N1 = 1 
-N2 = 1
+N1 = 3
+N2 = 3
 
 # DELTA = 0.000005
 # DELTA = 0.05
-# DELTA = 0.5
+DELTA = 0.5
 
 SIGMA_FIXED = 1/2;
 
-const D_MAX =  0.01
+const D_MAX =  0.002
 
 
 func_txt = "cos"
@@ -36,7 +36,7 @@ name = "fr_dicr_$func_txt$N1$N2$DELTA"
 const G1 = 1.001
 const G2 = G1 + DELTA
 g = [G1, G2]
-const D_ACCURACY =  0.0001
+const D_ACCURACY =  0.00001
 
 
 const NUM = 2;
