@@ -16,22 +16,27 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 
-N1 = 1 
-N2 = 1
+N1 = 3
+N2 = 3
+
 # DELTA = 0.000005
 # DELTA = 0.05
 DELTA = 0.5
+
 SIGMA_FIXED = 1/2;
-const D_MAX =  0.01
+
+const D_MAX =  0.002
 
 
-name = "fr_dicr_$N1$N2$DELTA"
+func_txt = "cos"
+
+name = "fr_dicr_$func_txt$N1$N2$DELTA"
 
 
 const G1 = 1.001
 const G2 = G1 + DELTA
 g = [G1, G2]
-const D_ACCURACY =  0.0005
+const D_ACCURACY =  0.00001
 
 
 const NUM = 2;
@@ -44,13 +49,22 @@ D_NUM = length(D_LIST)
 DATA = [zeros(4) for _ in 1:(D_NUM)]
 W = [zeros(2) for _ in 1:(D_NUM)]
 
-
-function eqn(y, t, d, no, F)
+function eqn_sin(y, t, d, no, F)
   f = g - sin.(y ./ no)
   exch = d * [F[2], F[1]]
   dy_dt = f - exch
   return dy_dt
 end
+
+
+function eqn_cos(y, t, d, no, F)
+  f = g - cos.(y ./ no)
+  exch = d * [F[2], F[1]]
+  dy_dt = f - exch
+  return dy_dt
+end
+
+eqn = eqn_cos;
 
 function chech_condition(y, sigma)
   y[1] = mod.(y[1], 2 * pi)
@@ -96,7 +110,7 @@ function FREQ_SYNC(DATA, PAR_N, D_LIST)
 
     sigma = SIGMA_FIXED;
     a = 8000;
-    b = 18000;
+    b = 12000;
 
     for m in eachindex(D_LIST)    
       D = D_LIST[m]

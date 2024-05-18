@@ -10,12 +10,23 @@ const k_DELETE_TRANSIENT = false;
 K = -500
 
 
-function eqn!(du, u, p, t)#u - это тета
+function eqn_cos!(du, u, p, t)#u - это тета
+  d, sigma, g, n = p
+  f = g .- cos.(u ./ n)
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  du .= f - d*exch
+end
+
+
+
+function eqn_sin!(du, u, p, t)#u - это тета
   d, sigma, g, n = p
   f = g .- sin.(u ./ n)
   exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
   du .= f - d*exch
 end
+
+eqn! = eqn_cos!;
 
 function DELETE_TRANSIENT(Y, tol=0.002)
   len = length(Y);
@@ -32,15 +43,15 @@ function DELETE_TRANSIENT(Y, tol=0.002)
 end
 
 n = [3, 3];
-d = 0.01
+d = 0.0005
 sigma = 1/2
-tspan = (8000, 9000)
+tspan = (0, 1000)
 
 y0 = [0, 0]
 
-# const DELTA =  0.05
-# const DELTA = 0.000005
-DELTA = 0.000005
+# DELTA = 0.000005
+DELTA = 0.05
+# DELTA = 0.5
 
 G1 = 1.01;
 G2 = G1 + DELTA;
