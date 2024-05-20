@@ -13,7 +13,7 @@ delta = 0.5
 N1 = 3;
 N2 = 3;
 sigma_txt = "1/2";
-name = "fr_dicr_cos330.5__20240517_0554"
+name = "fr_con_cos330.5__20240517_1334"
 @load "$name.jld2" DATA
 
 

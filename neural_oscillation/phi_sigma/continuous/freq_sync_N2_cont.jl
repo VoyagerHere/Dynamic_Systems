@@ -26,7 +26,7 @@ const D_MAX =  0.002
 
 func_txt = "cos"
 
-name = "fr_dicr_$func_txt$N1$N2$DELTA"
+name = "fr_con_$func_txt$N1$N2$DELTA"
 
 const G1 = 1.001
 const G2 = G1 + DELTA

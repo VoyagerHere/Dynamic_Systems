@@ -13,7 +13,7 @@ K = -500
 function eqn_cos!(du, u, p, t)#u - это тета
   d, sigma, g, n = p
   f = g .- cos.(u ./ n)
-  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u ./ n))))
   du .= f - d*exch
 end
 
@@ -22,7 +22,7 @@ end
 function eqn_sin!(du, u, p, t)#u - это тета
   d, sigma, g, n = p
   f = g .- sin.(u ./ n)
-  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u))))
+  exch = 1 ./ (1 .+ ℯ.^(K*(cos(sigma).-sin.(u ./ n))))
   du .= f - d*exch
 end
 

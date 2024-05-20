@@ -16,12 +16,12 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 
-N1 = 3
-N2 = 3
+N1 = 1
+N2 = 1
 
 # DELTA = 0.000005
 # DELTA = 0.05
-DELTA = 0.5
+# DELTA = 0.5   
 
 SIGMA_FIXED = 1/2;
 

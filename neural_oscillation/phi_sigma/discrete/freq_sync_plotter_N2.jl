@@ -6,14 +6,13 @@ using Dates
 using Plots
 gr()
 
-
 # delta =  5.0e-6
 # delta = 0.05
-delta = 0.5
-N1 = 3;
-N2 = 3;
+# delta = 0.5
+N1 = 1;
+N2 = 1;
 sigma_txt = "1/2";
-name = "fr_dicr_cos330.5__20240517_0628"
+name = "fr_dicr_cos110.5__20240518_1143"
 @load "$name.jld2" DATA
 
 
