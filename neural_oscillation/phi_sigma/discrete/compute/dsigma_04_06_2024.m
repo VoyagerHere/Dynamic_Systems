@@ -1,20 +1,24 @@
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-%  Phase synchronization modes for phi-sigma system for 2-neurons
-% 
-%  sigma - parameter of system, width of D area
-%  d - sync parameters of system, strength of sync
-%  
-% LAST COMPUTE TIME:
-% Ryzen 5600 (12 threads) - 1h30m
-% 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+core = feature('numcores');
+pool = parpool('local',core);
+disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
+
+retries = 0;
+retry_limit = 3;
+while (pool.NumWorkers < core)
+    retries = retries + 1;
+    disp('Restarting parallel pool');
+    delete(pool);
+    pool = parpool('local',core);
+    disp(['Pool has been started with Num Workers ' num2str(pool.NumWorkers)]);
+    if(retries >= retry_limit)
+        break;
+    end
+end
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % MAIN PROGRAM
 % 
-
-
 n1 = 1;
 n2 = 1;
 n = [n1; n2];
@@ -24,18 +28,18 @@ DELTA = 0.01;
 g1 = 1.001;
 g2 = g1 + DELTA;
 
+disp("Start calculation");
+
 % Table with gamma
-sigma_list = linspace(0, 1, 500);
-% sigma_list = linspace(0, 3, 1);
+sigma_list = linspace(0, 1, 400);
 SIGMA_TABLE = [];
 SIGMA_TABLE = sigma_iterate(g1, g2, n, sigma_list, SIGMA_TABLE);
 close all;
 
 % Save file
-datetime = datetime;
-datetimeStr = sprintf('%04d%02d%02d_%02d%02d', datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute);
+time = datestr(clock,'YYYY_mm_dd_HH_MM_SS');
 filename = 'dsigma';
-filename = sprintf('%s_%s.mat', filename, datetimeStr);
+filename = sprintf('%s_%s.mat', filename, time);
 save(filename, '-v7.3', '-nocompression')
 
 
@@ -46,7 +50,7 @@ save(filename, '-v7.3', '-nocompression')
 % Iterate over the sigma par value
 function SIGMA_TABLE = sigma_iterate(g1, g2, n, sigma_list, SIGMA_TABLE)
     delta_phi_error = 0.05; % phase sync tolerance
-    d_list = 0:0.0005:0.1; 
+    d_list = 0:0.0005:0.1;
     num_of_iterations = length(sigma_list); 
     close all;
     for k = 1:length(sigma_list)
@@ -54,6 +58,8 @@ function SIGMA_TABLE = sigma_iterate(g1, g2, n, sigma_list, SIGMA_TABLE)
         D_TABLE = d_iterate([g1; g2], d_list, n, sigma, delta_phi_error);
         SIGMA_TABLE(end + 1:end + size(D_TABLE, 1), 1:3) = D_TABLE;
         fprintf('Iteration = %d, All = %d \n',k, num_of_iterations);
+        drawnow('update');
+        disp(k);
     end
 end
 
@@ -61,10 +67,10 @@ end
 function DELTA_TABLE = d_iterate(g, d_list, n, sigma, delta_phi_error)
     DELTA_TABLE = zeros(length(d_list), 3);
     
-   for m = 1:length(d_list)
+   parfor m = 1:length(d_list)
         d = d_list(m);
         y0 = [pi/2; pi/2];
-        a = 6000;
+        a = 8000;
         b = 10000;
         step = 0.001;
         % Integrate the system with one-step Euler method
@@ -72,15 +78,15 @@ function DELTA_TABLE = d_iterate(g, d_list, n, sigma, delta_phi_error)
         F1_0 = 0;
         F2_0 = 0;
         F = [F1_0; F2_0];
-        [T, Y] = odeK4(@eqn ,[a,b-step], y0, step,[42, 1] ,{d, n, sigma, F}, 0, 0);
+        [T, Y] = odeK4(@eqn ,[a,b-step], y0, step,[42, 1] ,{d, n, sigma, F, g}, 0, 0);
         T = transpose(T);
         A1 = Y(:,1); % Phi_1 values
         A2 = Y(:,2); % Phi_2 values
         [A1, A2, err] = find_spikes(Y);
 
-        % if (err == 0)
-        %     [T, Y] = delete_unstb(T, Y, A1, A2, 6);
-        % end
+        %if (err == 0)
+            %[T, Y] = delete_unstb(T, Y, A1, A2, 6);
+        %end
         [DIFF, diff, ratio] = ms_phase_sync(T, Y);
 % DEBUG   
 % draw(T,Y, diff, g, d, sigma);
@@ -148,12 +154,12 @@ for ii = 1:length(tout)
   
   if extraparameters
     if find(y == 42)
-      [xdot1,outs] = feval(functionHandle, time, x, parameters{1}, parameters{2}, parameters{3}, parameters{4});
+      [xdot1,outs] = feval(functionHandle, time, x, parameters{1}, parameters{2}, parameters{3}, parameters{4}, parameters{5});
       other(:,ii) = outs;
       newF = outs;
-      [xdot2,outs] = feval(functionHandle, time + (.5*timestep), x + (xdot1*.5*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4});
-      [xdot3,outs] = feval(functionHandle, time + (.5*timestep), x + (xdot2*.5*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4});
-      [xdot4,outs] = feval(functionHandle, time + timestep, x + (xdot3*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4});
+      [xdot2,outs] = feval(functionHandle, time + (.5*timestep), x + (xdot1*.5*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4}, parameters{5});
+      [xdot3,outs] = feval(functionHandle, time + (.5*timestep), x + (xdot2*.5*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4}, parameters{5});
+      [xdot4,outs] = feval(functionHandle, time + timestep, x + (xdot3*timestep), parameters{1}, parameters{2}, parameters{3}, parameters{4}, parameters{5});
       
       xdotRK4 = (1/6) * (xdot1 + (2*xdot2) + (2*xdot3) + xdot4);
       
@@ -321,13 +327,9 @@ function draw(T, Y, diff, g, d, sigma)
 end
 
 
-function [dy_dt, F] = eqn(~, y, d, no, sigma, F)
+function [dy_dt, F] = eqn(~, y, d, no, sigma, F, g)
   yy = mod(y, 2*pi);
-  DELTA = 0.01;
-  g1 = 1.001;
-  g2 = g1 + DELTA;
-
-  g = [g1; g2];
+  
   f = g - sin(y ./ no);
   exch = d * [F(2); F(1)];
   dy_dt = f - exch;

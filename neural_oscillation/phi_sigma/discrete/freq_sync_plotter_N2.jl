@@ -6,13 +6,18 @@ using Dates
 using Plots
 gr()
 
-# delta =  5.0e-6
-# delta = 0.05
-# delta = 0.5
-N1 = 1;
-N2 = 1;
+# DELTA = 0.005
+# DELTA = 0.01
+DELTA = 0.05
+
+
+N1 = 3;
+N2 = 3;
+
 sigma_txt = "1/2";
-name = "fr_dicr_cos110.5__20240518_1143"
+name = "fr_dicr_sin330.05__20240602_1843"
+
+
 @load "$name.jld2" DATA
 
 
@@ -57,9 +62,9 @@ end
 # annotate!(center_DEAD1,  0.5, text("DEAD1", :center,  5))
 # annotate!(center_DEAD3,  0.5, text("Death3", :center,  5))
 
-title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $\sigma$ = %$sigma_txt, Δ = %$delta")
-# ylims!(0.75,  1.01)
-xlims!(0, 0.002)
+title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $\sigma$ = %$sigma_txt, Δ = %$DELTA")
+ylims!(0,  1)
+xlims!(0, 0.004)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"\Omega_{1}/\Omega_{2}", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 

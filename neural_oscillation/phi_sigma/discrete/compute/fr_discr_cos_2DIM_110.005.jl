@@ -9,8 +9,7 @@ using Dates
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false;
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_TRANSIENT = true; 
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
@@ -21,14 +20,14 @@ N2 = 1
 
 DELTA = 0.005
 # DELTA = 0.01
-# DELTA = 0.05  
+# DELTA = 0.05
 
 sigma_MAX = 1;
 
 const D_MAX =  0.002
 
 
-func_txt = "sin"
+func_txt = "cos"
 
 name = "fr_dicr_2DIM$func_txt$N1$N2$DELTA"
 
@@ -38,8 +37,7 @@ const G2 = G1 + DELTA
 g = [G1, G2]
 
 const D_ACCURACY =  0.00001
-const sigma_ACCURACY =  0.01
-
+const sigma_ACCURACY =  0.005
 
 const NUM = 2;
 const PAR_N = [N1, N2];
@@ -112,7 +110,7 @@ function solver(a, b, sigma, d, y0)
 end
 
 function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
-  Threads.@threads  for k in eachindex(sigma_LIST)
+  Threads.@threads for k in eachindex(sigma_LIST)
     # num_of_iterations = D_NUM*sigma_NUM
     sigma = sigma_LIST[k];
     a = 8000;
@@ -122,6 +120,11 @@ function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
       D = D_LIST[m]
       y0 = [pi/2; pi/2]
       Y, T = solver(a, b, sigma, D, y0)
+
+      if (k_DELETE_TRANSIENT)
+        y0 = Y[end, :]
+        Y, T = solver(a, b, sigma, D, y0)
+      end 
 
       w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
 

@@ -27,6 +27,7 @@ N2 = 1
 
 const G1 = 1.001
 
+
 DELTA = 0.005
 # DELTA = 0.01
 # DELTA = 0.05
@@ -56,23 +57,12 @@ const NUM_OF_COMPUTE_RES = 3;
 DATA = [zeros(NUM_OF_COMPUTE_RES) for _ in 1:(D_NUM*sigma_NUM)]
 SYNC = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
-
-function eqn_sin(y, t, d, no, F)
+function eqn(y, t, d, no, F)
   f = g - sin.(y ./ no)
   exch = d * [F[2], F[1]]
   dy_dt = f - exch
   return dy_dt
 end
-
-
-function eqn_cos(y, t, d, no, F)
-  f = g - cos.(y ./ no)
-  exch = d * [F[2], F[1]]
-  dy_dt = f - exch
-  return dy_dt
-end
-
-eqn = eqn_sin;
 
 function chech_condition(y, sigma, PAR_N)
   y[1] = mod.(y[1], 2 * pi)

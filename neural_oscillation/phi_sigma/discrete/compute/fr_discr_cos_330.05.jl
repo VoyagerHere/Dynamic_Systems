@@ -9,8 +9,7 @@ using Dates
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false;
-const k_DELETE_UNSTABLE = false;
+const k_DELETE_TRANSIENT = true; 
 const k_PRINT_ITERATION = false;
 
 const DATA_TAKE_ERROR = 0.25;
@@ -20,38 +19,34 @@ N1 = 3
 N2 = 3
 
 # DELTA = 0.005
-DELTA = 0.01
-# DELTA = 0.05  
-
-sigma_MAX = 1;
-
-const D_MAX =  0.002
+# DELTA = 0.01
+DELTA = 0.05
 
 
-func_txt = "sin"
+SIGMA_FIXED = 1/2;
 
-name = "fr_dicr_2DIM$func_txt$N1$N2$DELTA"
+const D_MAX =  0.03
+
+func_txt = "cos"
+
+name = "fr_dicr_$func_txt$N1$N2$DELTA"
 
 
 const G1 = 1.001
 const G2 = G1 + DELTA
 g = [G1, G2]
-
-const D_ACCURACY =  0.00001
-const sigma_ACCURACY =  0.01
+const D_ACCURACY =  0.0001
 
 
 const NUM = 2;
 const PAR_N = [N1, N2];
 const SYNC_ERROR = 0.25;
-sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
 D_LIST = 0:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
-sigma_NUM = length(sigma_LIST)
 
-DATA = [zeros(4) for _ in 1:(D_NUM*sigma_NUM)]
-W = [zeros(2) for _ in 1:(D_NUM*sigma_NUM)]
 
+DATA = [zeros(4) for _ in 1:(D_NUM)]
+W = [zeros(2) for _ in 1:(D_NUM)]
 
 function eqn_sin(y, t, d, no, F)
   f = g - sin.(y ./ no)
@@ -111,17 +106,22 @@ function solver(a, b, sigma, d, y0)
   return y, t
 end
 
-function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
-  Threads.@threads  for k in eachindex(sigma_LIST)
-    # num_of_iterations = D_NUM*sigma_NUM
-    sigma = sigma_LIST[k];
+function FREQ_SYNC(DATA, PAR_N, D_LIST)
+
+    sigma = SIGMA_FIXED;
     a = 8000;
     b = 12000;
 
     for m in eachindex(D_LIST)    
       D = D_LIST[m]
+      println(D)
       y0 = [pi/2; pi/2]
       Y, T = solver(a, b, sigma, D, y0)
+
+      if (k_DELETE_TRANSIENT)
+        y0 = Y[end, :]
+        Y, T = solver(a, b, sigma, D, y0)
+      end 
 
       w_s, w_b, err = SYNC_PAIR(T, Y, PAR_N)
 
@@ -129,15 +129,13 @@ function FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST)
       ratio_b = w_b[1] / w_b[2];
 
       if (err != 0)
-        DATA[m] = [D, sigma,  -err, -err]
+        DATA[m] = [D,  -err, -err]
         continue;
       end
-        DATA[m + (k-1)*D_NUM] = [D, sigma, ratio_s, ratio_b]
+        DATA[m] = [D, ratio_s, ratio_b]
         W[m] = vcat(w_s, w_b)
-        # it = m + (k-1)*D_NUM
-        # println("Iteration $it of $num_of_iterations")
       end
-    end
+    
 end
 
 function SYNC_PAIR(T, Y, PAR_N)
@@ -265,7 +263,7 @@ function DRAW(T, Y, G1, G2, D, PAR_N)
   ylabel!(L"\varphi")
 end
 
-FREQ_SYNC(DATA, PAR_N, D_LIST, sigma_LIST);
+FREQ_SYNC(DATA, PAR_N, D_LIST);
 
 
 if k_IS_SAVE_DATA 

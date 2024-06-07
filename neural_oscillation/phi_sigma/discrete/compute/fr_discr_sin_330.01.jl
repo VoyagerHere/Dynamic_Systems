@@ -19,7 +19,7 @@ N1 = 3
 N2 = 3
 
 # DELTA = 0.005
-# DELTA = 0.01
+DELTA = 0.01
 # DELTA = 0.05
 
 
@@ -27,7 +27,7 @@ SIGMA_FIXED = 1/2;
 
 const D_MAX =  0.03
 
-func_txt = "cos"
+func_txt = "sin"
 
 name = "fr_dicr_$func_txt$N1$N2$DELTA"
 
@@ -63,7 +63,7 @@ function eqn_cos(y, t, d, no, F)
   return dy_dt
 end
 
-eqn = eqn_cos;
+eqn = eqn_sin;
 
 function chech_condition(y, sigma, PAR_N)
   y[1] = mod.(y[1], 2 * pi)

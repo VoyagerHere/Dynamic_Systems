@@ -19,7 +19,7 @@ N1 = 3
 N2 = 3
 
 # DELTA = 0.005
-# DELTA = 0.01
+DELTA = 0.01
 # DELTA = 0.05
 
 

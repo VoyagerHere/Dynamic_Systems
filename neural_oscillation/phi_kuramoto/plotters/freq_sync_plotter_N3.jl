@@ -7,12 +7,12 @@ using Plots
 gr()
 
 
-alpha_txt = "π/8"
-delta = 0.02
+alpha_txt = "2π/3"
+delta = 0.01
 N1 = 3;
 N2 = 3;
 N3 = 3;
-@load "fr_pi_8__3_3_3_pt2__20240412_2017.jld2" DATA W DEATH
+@load "fr_pi_2_3__3_3_3_pt2__20240522_1348.jld2" DATA W DEATH
  
 size = length(DATA)
 DATA = reduce(vcat,transpose.(DATA))
@@ -75,7 +75,7 @@ end
 
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $n_3$ = %$N3, $\alpha$ = %$alpha_txt, Δ = %$delta")
-ylims!(0.4,  1)
+# ylims!(0.4,  1)
 #  xlims!(0.15,  1.2)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"\Omega_{1,2}/\Omega_{2,3}", guidefontsize=16)

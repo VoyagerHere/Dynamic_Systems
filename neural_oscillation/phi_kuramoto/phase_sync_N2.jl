@@ -6,11 +6,11 @@ using Statistics
 using Dates
 
 
-const k_ENABLE_ADAPTIVE_GRID = true;
+const k_ENABLE_ADAPTIVE_GRID = false;
 const k_DEBUG_PRINT = false
 const k_DRAW_PHASE_REALISATION = false;
 const k_IS_SAVE_DATA = true;
-const k_DELETE_TRANSIENT = false; 
+const k_DELETE_TRANSIENT = true; 
 const k_DELETE_UNSTABLE = false;
 const k_PRINT_ITERATION = false;
 
@@ -23,22 +23,21 @@ const ADAPTIVE_SET_ERROR = 10;
 # For DELETE_UNSTABLE
 const SPIKE_ERROR =  0
 
-name = "pi_8__2_2"
-N1 = 2
-N2 = 2
-const ALPHA = pi/8
+name = "pi_2_3__3_3"
+N1 = 3
+N2 = 3
+const ALPHA = 2*pi/3
 
 
 const NUM = 2;
 const PAR_N = [N1, N2];
-const D_MAX =  0.07
 const D_ACCURACY =  0.0001
 const G_NUM = 640
 const SYNC_ERROR =  0.25;
 const GStart =  1.01
-const DELTA =  0.025
+const DELTA =  0.012
 G_LIST = range(GStart, stop=GStart + DELTA, length=G_NUM)
-D_LIST = 0:D_ACCURACY:D_MAX
+D_LIST = 0:D_ACCURACY:0.2
 D_NUM = length(D_LIST)
 
 const NUM_OF_COMPUTE_RES = 3;
@@ -58,7 +57,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
     Threads.@threads for k in eachindex(G_LIST)
       G2 = G_LIST[k];
       a = 8000;
-      b = 10000;
+      b = 9000;
       for m in eachindex(D_LIST)
         d = D_LIST[m]
         
@@ -73,9 +72,7 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         T = sol.t;
 
         if (k_DELETE_TRANSIENT)
-          index = DELETE_TRANSIENT(Y)
-          start = T[index];
-          y0 = [start, start]
+          y0 = Y[end]
 
           prob = ODEProblem(eqn!, y0, tspan, p)
           sol = solve(prob, Tsit5(), reltol=1e-12, abstol=1e-12)
@@ -90,8 +87,8 @@ function PHASE_SYNC(DATA, SYNC, GStart, PAR_N, G_LIST, D_LIST, SPIKE_ERROR, ALPH
         sync = [0, 0]
 
         if (err == 0)
-          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR);
-          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR);
+          sync[1] = IS_SYNC(DIFF_BS, SYNC_ERROR, ratio);
+          sync[2] = IS_SYNC(DIFF_SP, SYNC_ERROR, ratio);
           if (sum(sync) == 0)
             ratio = 0
           end
@@ -263,9 +260,14 @@ function FIND_DIFF(A1, A2, T)
     return DIFF
 end
 
-function IS_SYNC(DIFF, SYNC_ERROR)
+function IS_SYNC(DIFF, SYNC_ERROR, ratio)
+  if ((ratio == 1) &&  DIFF_SPIKES(DIFF, SYNC_ERROR))
+    return 2;
+  end
   if (DIFF_SPIKES(DIFF, SYNC_ERROR))
     return 1;
+  end
+  return 0;
 end
 
 function DIFF_SPIKES(DIFF, SYNC_ERROR)
@@ -273,18 +275,13 @@ function DIFF_SPIKES(DIFF, SYNC_ERROR)
   return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
 end
 
-function DIFF_SPIKES(DIFF, SYNC_ERROR)
-  mn = mean(abs.(DIFF))
-  return all(abs.(abs.(DIFF) .- mn) .< SYNC_ERROR)
-end
-
-function DRAW(T, Y, G1, G2, D, PAR_N)
-    Y = [mod.(y, 2 * pi) for y in Y]
+function DRAW(T, Y, G1, G2, d, PAR_N, alpha_txt)
+  Y = [mod.(y, 2 * pi) for y in Y]
     n1 = PAR_N[1];
     n2 = PAR_N[2];
     plot(T, getindex.(Y, 1), label=L"n_1 = %$n1, \gamma_{1}=%$G1")
     plot!(T, getindex.(Y, 2), label=L"n_2 = %$n2 , \gamma_{2}=%$G2")
-    title!(L"d = %$D")
+    title!(L"\alpha = %$alpha_txt, d = %$d")
     ylims!(0,  2*pi)
     xlabel!(L"t")
     ylabel!(L"\varphi")

@@ -51,3 +51,8 @@ octave-workspace
 # Large .mat files can be handled with the following pattern
 # Replace 'large' with the size threshold you consider acceptable
 *.mat
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.tar.gz

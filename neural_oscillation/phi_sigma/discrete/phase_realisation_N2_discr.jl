@@ -1,4 +1,5 @@
 using Plots
+using LaTeXStrings
 
 
 
@@ -59,27 +60,29 @@ function solver(a, b, sigma, d, y0)
   return y, t
 end
 
-function draw(T, Y, d, sigma)
+function draw(T, Y, d, sigma, DELTA, PAR_N)
   p = plot(T, Y[:, 1], line = (:red), label = "\$\\phi_1\$")
   plot!(T, Y[:, 2], line = (:darkgreen), label = "\$\\phi_2\$")
   ylims!(0, 2 * pi)
   yticks!([0, pi, 2 * pi], ["0", "\\pi", "2\\pi"])
   xlabel!("t")
   ylabel!("\$\\phi\$")
-  title!("d = $d, σ = $sigma")
+  N1 = PAR_N[1]
+  N2 = PAR_N[2]
+  title!(L"$n_1$ = %$N1, $n_2$ = %$N2, d = %$d,  σ = %$sigma,  Δ = %$DELTA")
   display(p)
 end
 
 
-d =  0.0005
+d =  0.03
 sigma = 1/2
 n1 = 1
 n2 = 1
 const G1 = 1.001
 
-# DELTA = 0.000005
+# DELTA = 0.005
+DELTA = 0.01
 # DELTA = 0.05
-DELTA = 0.5
 
 
 const G2 = G1+DELTA
@@ -90,7 +93,12 @@ const PAR_N = [N1, N2];
 g = [G1, G2]
 y0 = [pi/2; pi/2]
 
-Y, T = solver(0, 1000, sigma, d, y0)
+
+Y, T = solver(0, 2000, sigma, d, y0)
+y0 = Y[end, :];
+
+
+Y, T = solver(0, 2000, sigma, d, y0)
 
 Y = mod.(Y, 2*pi)
-draw(T, Y, d, sigma)
+draw(T, Y, d, sigma, DELTA, PAR_N)

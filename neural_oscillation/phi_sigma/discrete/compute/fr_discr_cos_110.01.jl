@@ -15,11 +15,11 @@ const k_PRINT_ITERATION = false;
 const DATA_TAKE_ERROR = 0.25;
 
 
-N1 = 3
-N2 = 3
+N1 = 1
+N2 = 1
 
 # DELTA = 0.005
-# DELTA = 0.01
+DELTA = 0.01
 # DELTA = 0.05
 
 
@@ -35,7 +35,7 @@ name = "fr_dicr_$func_txt$N1$N2$DELTA"
 const G1 = 1.001
 const G2 = G1 + DELTA
 g = [G1, G2]
-const D_ACCURACY =  0.0001
+const D_ACCURACY =  0.00001
 
 
 const NUM = 2;

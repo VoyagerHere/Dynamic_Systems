@@ -10,11 +10,17 @@
 
   text = L"$\varphi$ нейрон"
 
-  delta = 0.000005
-  # delta = 0.05
+  # DELTA = 0.005
+  DELTA = 0.01
+  # DELTA = 0.05
+
+
+
   N1 = 1;
   N2 = 1;
-  name = "fr_dicr_2DIMsin115.0e-6__20240519_2152"
+  name = "fr_dicr_2DIMsin110.01__20240602_1842"
+
+  
   @load "$name.jld2" DATA
 
   size = length(DATA)
@@ -26,8 +32,8 @@
 
   GOOD = findall(x -> x > 0, RATIO_B[:,1])
   DEAD1 = findall(x -> x == -1.0, RATIO_B[:,1])
-  DEAD2 = findall(x -> x == -2.0, RATIO_B[:,1])
-  DEAD3 = findall(x -> x == -3.0, RATIO_B[:,1])
+  # DEAD2 = findall(x -> x == -2.0, RATIO_B[:,1])
+  DEAD3 = findall(x -> x == 0.0, RATIO_B[:,1])
 
   if length(GOOD) > 0
       ratio_b_good = RATIO_B[GOOD, 1]
@@ -37,16 +43,14 @@
   if length(DEAD1) > 0
       scatter!(D_VEC[DEAD1], SIGMA_VEC[DEAD1], opacity=0.5, color=colorant"grey44", label=L"D $\; \varphi_1$")
   end
-
-  if length(DEAD2) > 0
-      scatter!(D_VEC[DEAD2], SIGMA_VEC[DEAD2], opacity=0.5, color=colorant"grey34", label=L"D $\varphi_2$")
-  end
+  ratio_b_good = RATIO_B[DEAD3, 1]
 
   if length(DEAD3) > 0
-      scatter!(D_VEC[DEAD3], SIGMA_VEC[DEAD3], opacity=1, color=colorant"black", label=L"D $\varphi_1, \varphi_2$")
+      ratio_b_good = RATIO_B[DEAD3, 1]
+      scatter!(D_VEC[DEAD3], SIGMA_VEC[DEAD3], marker_z=ratio_b_good, legend=true, label=L"D $\varphi_1, \varphi_2$")
   end
 
-  title!(L"$n_1$ = %$N1, $n_2$ = %$N2, Δ = %$delta, %$text")
+  title!(L"$n_1$ = %$N1, $n_2$ = %$N2, Δ = %$DELTA, %$text")
   xlabel!(L"d", guidefontsize=16)
   ylabel!(L"$\sigma$", guidefontsize=16)
   plot!(legendfontsize=10, legend=:topleft)
