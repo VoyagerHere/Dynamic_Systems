@@ -40,15 +40,15 @@ name = "ph_discr_$func_txt$N1$N2$DELTA"
 
 g = [G1, G2]
 const D_ACCURACY =  0.001
-const sigma_ACCURACY =  0.001
-const D_MAX =  0.1
+const sigma_ACCURACY =  0.0001
+const D_MAX =  1
 const sigma_MAX = 1
 
 const NUM = 2;
 const PAR_N = [N1, N2];
 const SYNC_ERROR =  0.25;
-sigma_LIST = 0:sigma_ACCURACY:sigma_MAX
-D_LIST = 0:D_ACCURACY:D_MAX
+sigma_LIST = 0.8120:sigma_ACCURACY:sigma_MAX
+D_LIST = 0.003:D_ACCURACY:D_MAX
 D_NUM = length(D_LIST)
 sigma_NUM = length(sigma_LIST)
 
@@ -78,7 +78,7 @@ function chech_condition(y, sigma, PAR_N)
   y[1] = mod.(y[1], 2 * pi)
   y[2] = mod.(y[2], 2 * pi)
 
-  y = y ./ PAR_N
+  # y = y ./ PAR_N
 
   if ((y[1] > pi/2 - sigma) && (y[1] < pi/2 + sigma))
     F1 =  0;
@@ -116,21 +116,20 @@ function solver(a, b, sigma, d, y0)
 end
 
 function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
-  Threads.@threads for m in eachindex(D_LIST)
-      D = D_LIST[m]
+  for k in eachindex(sigma_LIST)
+      sigma = sigma_LIST[k];
       a = 8000;
-      b = 10000;
-      for k in eachindex(sigma_LIST)
-        sigma = sigma_LIST[k];
-
+      b = 9000;
+      for m in eachindex(D_LIST)
+        global D = D_LIST[m]
         y0 = [pi/2; pi/2]
-        Y, T = solver(a, b, sigma, D, y0)
+        global Y, T = solver(a, b, sigma, D, y0)
         if (k_DELETE_TRANSIENT)
           y0 = Y[end, :]
-          Y, T = solver(a, b, sigma, D, y0)
+          global Y, T = solver(a, b, sigma, D, y0)
         end 
 
-        DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
+        global DIFF_SP, DIFF_BS, ratio, err, b_new, len = SYNC_PAIR(T, Y, PAR_N, SPIKE_ERROR, b)
 
         b = copy(b_new);
         sync = [0, 0]
@@ -144,7 +143,9 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
 
         @inbounds DATA[m + (k-1)*D_NUM] = [D, ratio, sigma]
         @inbounds SYNC[m + (k-1)*D_NUM] = sync;
+        return;
     end
+    return;
     k_PRINT_ITERATION && println("Iteration $k of $num_of_iterations")
     end
 end

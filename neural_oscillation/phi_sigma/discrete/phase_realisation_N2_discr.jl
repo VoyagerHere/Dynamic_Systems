@@ -18,7 +18,7 @@ function eqn_cos(y, t, d, no, F)
   return dy_dt
 end
 
-eqn = eqn_cos;
+eqn = eqn_sin;
 
 function chech_condition(y, sigma)
   y[1] = mod.(y[1], 2 * pi)
@@ -74,8 +74,8 @@ function draw(T, Y, d, sigma, DELTA, PAR_N)
 end
 
 
-d =  0.03
-sigma = 1/2
+d =  0.1
+sigma = 0.6
 n1 = 1
 n2 = 1
 const G1 = 1.001

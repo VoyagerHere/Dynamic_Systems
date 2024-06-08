@@ -39,10 +39,10 @@ func_txt = "sin"
 name = "ph_discr_$func_txt$N1$N2$DELTA"
 
 g = [G1, G2]
-const D_ACCURACY =  0.001
+const D_ACCURACY =  0.0001
 const sigma_ACCURACY =  0.001
-const D_MAX =  0.1
-const sigma_MAX = 1
+const D_MAX =  0.03
+const sigma_MAX = 0.3
 
 const NUM = 2;
 const PAR_N = [N1, N2];
