@@ -175,6 +175,7 @@ function FIND_SPIKES(Y, n)
   FIND_NEAR_POINTS(SPIKES)
   if (length(SPIKES)/n < 3)
     err = 1;
+    
   else
     err = 0;
   end
