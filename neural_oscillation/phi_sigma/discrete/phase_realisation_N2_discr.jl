@@ -74,14 +74,14 @@ function draw(T, Y, d, sigma, DELTA, PAR_N)
 end
 
 
-d =  4
-sigma = 1/2
+d =  0.0015
+sigma = 0.5
 n1 = 1
 n2 = 1
 const G1 = 1.001
 
-# DELTA = 0.005
-DELTA = 0.01
+DELTA = 0.005
+# DELTA = 0.01
 # DELTA = 0.05
 
 

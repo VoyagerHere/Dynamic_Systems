@@ -9,14 +9,14 @@ pygui(true)
 
 text = L"$\varphi$ нейрон"
 
-DELTA = 0.005
+# DELTA = 0.005
 # DELTA = 0.01
-# DELTA = 0.05
+DELTA = 0.05
 
-N1 = 1
-N2 = 1
+N1 = 3
+N2 = 3
 
-name = "fr_dicr_2DIMcos330.01__20240610_1538.jld2"
+name = "fr_dicr_2DIMsin330.05__20240609_0623.jld2"
 
 @load "$name" DATA
 
@@ -39,8 +39,6 @@ fig, ax = subplots()
 
 if length(GOOD) > 0
     ratio_b_good = RATIO_B[GOOD, 1]
-    ratio_b_good = map(x -> x <= 1.0 ? x : 1.0, ratio_b_good)
-
     # Normalize the ratio_b_good values to [0, 1]
     # normalized_ratio_b_good = (ratio_b_good .- minimum(ratio_b_good)) ./ (maximum(ratio_b_good) - minimum(ratio_b_good))
     scatter_plot = ax.scatter(D_VEC[GOOD], SIGMA_VEC[GOOD], s=size_sc, c=ratio_b_good, cmap="viridis", label=L"\Omega_{b}^{1}/\Omega_{b}^{2}")
@@ -56,9 +54,8 @@ end
 #     ax.scatter(D_VEC[DEAD3], SIGMA_VEC[DEAD3], s=size_sc, label=L"D $\varphi_1, \varphi_2$")
 # end
 
-ax.legend(loc="upper left", fontsize=16, framealpha=1)
+# ax.legend(loc="lower right", fontsize=16, framealpha=1)
 
 ax.set_title(L"$n_1$ = %$N1, $n_2$ = %$N2, Δ = %$DELTA, %$text")
 ax.set_xlabel(L"d", fontsize=16)
-ax.set_xlim(0,  0.0015)
 ax.set_ylabel(L"\sigma", fontsize=20)
