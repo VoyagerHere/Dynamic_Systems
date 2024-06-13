@@ -27,8 +27,8 @@ N2 = 1
 
 const G1 = 1.001
 
-DELTA = 0.005
-# DELTA = 0.01
+# DELTA = 0.005
+DELTA = 0.01
 # DELTA = 0.05
 
 const G2 = G1+DELTA
@@ -40,7 +40,7 @@ name = "ph_discr_$func_txt$N1$N2$DELTA"
 
 g = [G1, G2]
 const D_ACCURACY =  0.001
-const sigma_ACCURACY =  0.005
+const sigma_ACCURACY =  0.0001
 const D_MAX =  0.1
 const sigma_MAX = 1
 
@@ -119,7 +119,7 @@ function PHASE_SYNC(DATA, SYNC, PAR_N, sigma_LIST, D_LIST, SPIKE_ERROR)
   Threads.@threads for k in eachindex(sigma_LIST)
       sigma = sigma_LIST[k];
       a = 8000;
-      b = 12000;
+      b = 10000;
       for m in eachindex(D_LIST)
         D = D_LIST[m]
         y0 = [pi/2; pi/2]

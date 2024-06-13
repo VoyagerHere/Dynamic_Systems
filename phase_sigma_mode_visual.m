@@ -32,7 +32,7 @@ for i = 1:length(unique_ratios)
       plot(sigma(ratio_index), d(ratio_index), '.', 'Color', 	[0.3010 0.7450 0.9330]);
   elseif unique_ratios(i) == -3
       legend_str = 'No oscillation';
-      plot(sigma(ratio_index), d(ratio_index), '.', 'Color', 	[0, 0, 1]);
+      plot(sigma(ratio_index), d(ratio_index), '.', 'Color', 	[0.9290, 0.6940, 0.1250]);
   else
       legend_str = ['1:' num2str(unique_ratios(i))];
       plot(sigma(ratio_index), d(ratio_index), '.', 'Color', rand(1,3));

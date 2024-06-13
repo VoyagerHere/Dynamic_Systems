@@ -15,10 +15,10 @@ N1 = 3;
 N2 = 3;
 
 sigma_txt = "1/2";
-name = "fr_dicr_sin330.05__20240602_1843"
+name = "fr_dicr_cos330.05__20240607_0034.jld2"
 
 
-@load "$name.jld2" DATA
+@load "$name" DATA
 
 
 
@@ -64,7 +64,7 @@ end
 
 title!(L"$n_1$ = %$N1, $n_2$ = %$N2, $\sigma$ = %$sigma_txt, Δ = %$DELTA")
 ylims!(0,  1)
-xlims!(0, 0.004)
+xlims!(0, 0.005)
 xlabel!(L"d", guidefontsize=16)
 ylabel!(L"\Omega_{1}/\Omega_{2}", guidefontsize=16)
 plot!(legendfontsize=10, legend=:outertopright) 
