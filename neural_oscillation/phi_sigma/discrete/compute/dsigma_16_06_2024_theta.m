@@ -50,7 +50,7 @@ save(filename, '-v7.3', '-nocompression')
 % Iterate over the sigma par value
 function SIGMA_TABLE = sigma_iterate(g1, g2, n, sigma_list, SIGMA_TABLE)
     delta_phi_error = 0.05; % phase sync tolerance
-    d_list = 0:0.0005:0.02;
+    d_list = 0:0.00005:0.015;
     num_of_iterations = length(sigma_list); 
     close all;
     for k = 1:length(sigma_list)
