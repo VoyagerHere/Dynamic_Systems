@@ -1,5 +1,5 @@
-d =  0.1;
-sigma = 1;
+d =  0.001;
+sigma = 0;
 
 n1 = 1;
 n2 = 1;
@@ -33,7 +33,7 @@ function [dy_dt, F] = eqn(~, y, d, no, sigma, F)
     y = transpose(y);
     yy = mod(y, 2*pi);
     g = [1.001; 1.002];
-    f = g - sin(y ./ no);
+    f = g - cos(y ./ no);
     exch = d * [F(2); F(1)];
     dy_dt = f - exch;
     [F1, F2] = chech_condition(yy, sigma);
